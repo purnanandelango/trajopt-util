@@ -1,5 +1,5 @@
-function [cnstr,cost_fun] = sys_cnstr_cost(x,u,prb,...
-                                           ~,ubar)
+function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
+                                                    ~,ubar)
 % m     = x(1)
 % rI    = x(2:4)
 % vI    = x(5:7)
@@ -45,7 +45,7 @@ function [cnstr,cost_fun] = sys_cnstr_cost(x,u,prb,...
         cnstr = [cnstr;
                  m(k) >= prb.mdry                                                                               % Vehicle mass lower bound
                  norm(prb.Hgam*rI(:,k)) <= rI(1,k)/prb.cotgamgs;                                                % Glide slope constraint
-                 2*norm(prb.Hthet*qBI(:,k)) <= 1-prb.costhetmax;                                                % Vehicle tilt angle constraint
+                 norm(prb.Hthet*qBI(:,k)) <= prb.sinthetmaxby2;                                                % Vehicle tilt angle constraint
                  norm(omgB(:,k),inf) <= prb.omgmax;                                                             % Angular velocity magnitude upper bound
                  norm(TB(:,k)) <= prb.Tmax;                                                                     % Thrust magnitude upper bound
                  prb.cosdelmax*norm(TB(:,k)) <= TB(1,k);                                                        % Thrust pointing constraint
@@ -74,5 +74,7 @@ function [cnstr,cost_fun] = sys_cnstr_cost(x,u,prb,...
 
     % Time of maneuver upper bound
     cnstr = [cnstr;ToF <= prb.ToFmax];
+
+    vc_cnstr = 0;
 
 end

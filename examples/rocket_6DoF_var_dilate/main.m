@@ -1,16 +1,13 @@
 clearvars
 clc
 
-prb = problem_data(25,10,2e2,0.1,0.05);
+prb = problem_data(30,10,2e2,0.1,0.1);
 
 load('recent_solution','x','u','tau');
 [xbar,ubar] = misc.create_initialization(prb,1,x,u,tau);
 
 [xbar,ubar] = scp.run_ptr_noparam_varscl(xbar,ubar,prb,@sys_cnstr_cost);
 tvecbar = prb.time_grid(prb.tau,xbar,ubar);
-
-% Ensure that small enough integration step is picked since tvecbar is non-uniform
-prb.Kfine = 10*(1+round(1/min(diff(tvecbar))));
 
 % Simulate solution on fine grid
 
@@ -19,8 +16,6 @@ prb.Kfine = 10*(1+round(1/min(diff(tvecbar))));
 tvec = prb.time_grid(tau,x,u);
 
 % Simulate on phyiscal time grid
-%       Large discrepancy for large Kfine : {tvecbar,[ubar(1:3,:);ones(1,prb.K)]}     
-%       Small discrepancy for large Kfine : {tvec,   [u(1:3,:);   ones(1,prb.Kfine)]}
 [~,x2,~] = disc.simulate_dyn(xbar(:,1),{tvec,[u(1:3,:);ones(1,prb.Kfine)]},@(t,x,u) prb.dyn_func(t,x,u),[0,tvec(end)],prb.Kfine,prb.disc);
 
 m = x(1,:);

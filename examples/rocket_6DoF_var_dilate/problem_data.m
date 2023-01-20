@@ -10,7 +10,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.dtau = diff(prb.tau);
     
-    prb.h = (1/5)*min(prb.dtau);            % Step size for integration that computes FOH matrices
+    prb.h = (1/10)*min(prb.dtau);            % Step size for integration that computes FOH matrices
     prb.Kfine = 1+round(2/min(prb.dtau));   % Size of grid on which SCP solution is simulated
     
     % System parameters
@@ -36,7 +36,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     % Bounds
 
-    prb.thetmax = 90*pi/180; prb.costhetmax = cos(prb.thetmax);
+    prb.thetmax = 45*pi/180; prb.sinthetmaxby2 = sin(prb.thetmax/2);
     prb.gamgs = 75*pi/180;   prb.cotgamgs = cot(prb.gamgs);
     
     prb.omgmax = 28.6*pi/180;
@@ -97,7 +97,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     umax  = grid.ends2interp(umax1,umaxK,prb.tau,'poly',1);
     ubnd  = linalg.matcat(umin,umax,3);
 
-    [Sz,cz] = misc.generate_varscaling({xbnd,ubnd},[0,1]);
+    [Sz,cz] = misc.generate_varscaling({xbnd,ubnd},[-1,1]);
 
     prb.Sx = Sz(:,1);
     prb.Su = Sz(:,2);
@@ -109,7 +109,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     % SCP parameters
 
     prb.disc = "FOH";
-    prb.foh_type = "v1";
+    prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
     prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-9);

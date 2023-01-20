@@ -33,7 +33,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     % Bounds
 
-    prb.thetmax = 90*pi/180; prb.costhetmax = cos(prb.thetmax);
+    prb.thetmax = 45*pi/180; prb.sinthetmaxby2 = sin(prb.thetmax/2);
     prb.gamgs = 75*pi/180;   prb.cotgamgs = cot(prb.gamgs);
     
     prb.omgmax = 28.6*pi/180;
@@ -75,7 +75,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     umax = 6*ones(prb.nu,1);
     pmin = 0;
     pmax = 5;
-    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax],[pmin,pmax]},[0,1]);
+    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax],[pmin,pmax]},[-1,1]);
 
     prb.Sx = Sz{1}; prb.invSx = inv(Sz{1});
     prb.Su = Sz{2}; prb.invSu = inv(Sz{2});
@@ -84,7 +84,8 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.cu = cz{2};
     prb.cp = cz{3};        
 
-    prb.time_of_maneuver = @(x,u,p) prb.Sp*p +prb.cp;
+    % Takes in unscaled data
+    prb.time_of_maneuver = @(x,u,p) p;
 
     % SCP parameters
 
