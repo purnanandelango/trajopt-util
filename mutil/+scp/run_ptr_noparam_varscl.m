@@ -68,7 +68,7 @@ function [xbar,ubar,converged] = run_ptr_noparam_varscl(xbar,ubar,prb,sys_constr
         if prb.disc == "FOH"
             % Propagation
             tic
-            [Ak,Bmk,Bpk,wk] = feval("compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             propagate_time = toc*1000;
 
             for k = 1:K-1
@@ -82,7 +82,7 @@ function [xbar,ubar,converged] = run_ptr_noparam_varscl(xbar,ubar,prb,sys_constr
         elseif prb.disc == "ZOH"
             % Propagation
             tic
-            [Ak,Bk,wk] = compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             propagate_time = toc*1000;
 
             for k = 1:K-1
