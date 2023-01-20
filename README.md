@@ -1,1 +1,1 @@
-# Utilities for Trajectory Optimization Methods
+# Utilities for Numerical Trajectory Optimization
