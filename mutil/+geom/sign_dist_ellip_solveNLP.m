@@ -23,7 +23,7 @@ function [y,dist_val] = sign_dist_ellip_solveNLP(x,A,varargin)
     % If x is exterior to the ellipsoid
     if norm(A\x) >= 1
 
-        [y,dist_val] = sign_dist_ellip_ext(x,A,verbose);
+        [y,dist_val] = geom.sign_dist_ellip_ext(x,A,verbose);
 
     else % x is in the interior of the ellipsoid
 
