@@ -9,7 +9,7 @@ clc
 n = 6;        
 
 fprintf("\n");
-for k = 1:100
+for k = 1:10
         
         A = randn(n,n);
         P = A*A';
@@ -35,10 +35,10 @@ for k = 1:100
         end
 
         opts = optimoptions('fsolve','Algorithm','levenberg-marquardt','FunctionTolerance',1e-9,'StepTolerance',1e-8,...
-                            'Display','iter','SpecifyObjectiveGradient',true);
-        [lam_str,~,exit_flag] = fsolve(@(lam) fun_solve(lam,func_g,grad_func_g),4,opts);
+                            'Display','none','SpecifyObjectiveGradient',true);
+        [lam_str,~,exit_flag] = fsolve(@(lam) fun_solve(lam,func_g,grad_func_g),randn,opts);
 
-        fprintf("Dual variable = %.3f, Constraint violation = %.2e\n",lam_str,func_g(lam_str));
+        fprintf("Dual variable = %6.3f, Constraint violation = %9.2e\n",lam_str,func_g(lam_str));
 
 end
 
