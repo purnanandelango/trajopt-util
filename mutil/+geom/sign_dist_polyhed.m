@@ -49,7 +49,7 @@ function [y,dist_val] = sign_dist_polyhed(x,H,g,varargin)
 
         % Compute projection onto halfspaces which define the complement of the polyhedron
         for j = 1:m
-           [y_halfspace(:,j),dist_val_halfspace(j)] = project_halfspace(x,-H(j,:)',-g(j)); 
+           [y_halfspace(:,j),dist_val_halfspace(j)] = geom.project_halfspace(x,-H(j,:)',-g(j)); 
         end
 
         % Pick the minimum distance projection point
