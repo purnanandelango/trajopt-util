@@ -7,6 +7,7 @@ A = randn(n);
 % A = diag(1:n);
 P = A*A';
 
+% Dimensions to project on
 % dims = randi([1,6],[1,3]);
 dims = [3,5,6];
 % dims = 4:6;

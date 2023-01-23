@@ -6,9 +6,11 @@ close all
 
 % Ambient dimension
 n = 3;
+dims_lower = 1:2;
+
 In = eye(n);
 
-% Random point to project
+% Random point to project onto polytope
 x = randn(n,1);
 
 % Construct polytope
@@ -37,7 +39,7 @@ x = randn(n,1);
 %     g = P.b;
 
     % From a box { z | -z_max <= z <= z_max}
-    V = qr(randn(n,n));
+    V = qr(randn(n));
     z_max = randi([1,5],[n,1]);
     H = [In;-In]*V;
     g = [z_max;z_max];
@@ -58,14 +60,29 @@ tic
 y = geom.sign_dist_polyhed(x,H,g,true);
 toc
 
-if n == 2
-    plot(y(1),y(2),'.r','MarkerSize',12);
-elseif n == 3
-    plot3(y(1),y(2),y(3),'.r','MarkerSize',12);
+if ismember(n,[2,3])
+    if n == 2
+        plot(y(1),y(2),'.r','MarkerSize',12);
+    elseif n == 3
+        plot3(y(1),y(2),y(3),'.r','MarkerSize',12);
+    end
+    axis equal
+    ax = gca;
+    ax.DataAspectRatioMode = 'manual';
+    ax.DataAspectRatio = [1,1,1];
+    ax.PlotBoxAspectRatioMode = 'manual';
+    ax.PlotBoxAspectRatio = [1,1,1];
 end
-axis equal
-ax = gca;
-ax.DataAspectRatioMode = 'manual';
-ax.DataAspectRatio = [1,1,1];
-ax.PlotBoxAspectRatioMode = 'manual';
-ax.PlotBoxAspectRatio = [1,1,1];
+figure
+% Project polytope to lower dimensions
+if n >= 3
+    [Hl,gl] = geom.project_polyhed2dims(H,g,dims_lower);
+    Pl = Polyhedron('A',Hl,'b',gl);
+    Pl.plot('color',[0,0.7,0.3],'alpha',0.3);    
+    axis equal
+    ax = gca;
+    ax.DataAspectRatioMode = 'manual';
+    ax.DataAspectRatio = [1,1,1];
+    ax.PlotBoxAspectRatioMode = 'manual';
+    ax.PlotBoxAspectRatio = [1,1,1];    
+end

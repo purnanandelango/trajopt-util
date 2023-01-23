@@ -1,4 +1,4 @@
-% Test the estimate of gradient of the Lagrangian formed for the (nonconvex) ellipsoid projection problem
+% Test the solution to KKT conditions of the (nonconvex) ellipsoid projection problem
 
 clearvars
 close all
@@ -6,7 +6,7 @@ clc
 
 % rng default
         
-n = 6;        
+n = 4;        
 
 fprintf("\n");
 for k = 1:10

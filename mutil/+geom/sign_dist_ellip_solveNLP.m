@@ -41,8 +41,8 @@ function [y,dist_val] = sign_dist_ellip_solveNLP(x,A,varargin)
                             'SpecifyConstraintGradient',true,'SpecifyObjectiveGradient',true,...
                             'CheckGradients',false,...
                             'MaxIterations',1000,...
-                            'HessianFcn',@(y,lambda) hessianfunc(y,lambda,P),'Display',display_flag);
-        [y,obj_val,exit_flag] = fmincon(@(y) obj_fun(y,x),x+0.1*rand(n,1),[],[],[],[],[],[],@(y) nonlin_con(y,P),opts); 
+                            'HessianFcn',@(y,lambda) hessianfunc(y,lambda,invP),'Display',display_flag);
+        [y,obj_val,exit_flag] = fmincon(@(y) obj_fun(y,x),x+0.1*rand(n,1),[],[],[],[],[],[],@(y) nonlin_con(y,invP),opts); 
         
         switch exit_flag
             case {0,-1,-2}
@@ -62,14 +62,14 @@ function [obj_val,obj_grad] = obj_fun(y,x)
     obj_grad = 2*(y-x);
 end
 
-function [c,ceq,dc,dceq] = nonlin_con(y,P)
-    ceq = y'*P*y - 1;
+function [c,ceq,dc,dceq] = nonlin_con(y,invP)
+    ceq = y'*invP*y - 1;
     c = [];
     dc = [];
-    dceq = 2*P*y;
+    dceq = 2*invP*y;
 end
 
-function H = hessianfunc(y,lambda,P)
+function H = hessianfunc(y,lambda,invP)
     n = length(y);
-    H = 2*(eye(n) + lambda.eqnonlin*P);
+    H = 2*(eye(n) + lambda.eqnonlin*invP);
 end
