@@ -13,8 +13,8 @@ function [A_proj] = project_ellip2dims(A,dims)
     ndims = numel(dims);
 
     % Permute columns of A so that the desired dimensions are to the left
-    In = eye(n);
-    A = In(:,[dims,setdiff(1:n,dims)])*A;
+    % In = eye(n);
+    A = A([dims,setdiff(1:n,dims)],[dims,setdiff(1:n,dims)]);
 
     if ndims == n
         A_proj = A;

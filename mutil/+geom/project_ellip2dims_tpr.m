@@ -22,7 +22,7 @@ function [A_proj] = project_ellip2dims_tpr(A,dims)
     Q = inv( inv(A)' * inv(A) );
 
     if (ndims>n)
-        error('Requestion dimension is lower than the ambient dimension of the ellipsoid.')
+        error('Requested dimension is greater than the ambient dimension of the ellipsoid.')
         % error('Requested dimensions not compatible with ellipsoid.')
     end
     % Build projection matrix
@@ -34,7 +34,7 @@ function [A_proj] = project_ellip2dims_tpr(A,dims)
     end
     P = In/Q;
     % The LDL decomposition here is more robust than the cholesky
-    % since Yalmip can produce some solutions that have a very
+    % since YALMIP can produce some solutions that have a very
     % small negative eigenvalues. Mathematically this procedure is
     % identical, but ldl does not throw an error if P is not pos
     % def. Moreover, the factor L is not necessarily lower
