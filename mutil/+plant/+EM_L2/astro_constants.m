@@ -1,4 +1,4 @@
-% Assemble a structure of relevant astrodynamics constants
+% Assemble a structure of astrodynamics constants relevant in cis-lunar space
 function astro = astro_constants()
     astro               = struct;
     
