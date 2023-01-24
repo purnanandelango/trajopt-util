@@ -23,13 +23,13 @@ function dx = dyn_func_inert(t,x,astro)
     dx(4:6) = -astro.ndGM_Moon*rsc/sc_dist^3;
     
     % Perturbing body gravitatinal force: Earth
-    ephm_state  = EM_L2.ephemeris_state(0,t_ephm,astro.Earth,astro.Moon);
+    ephm_state  = plant.EM_L2.ephemeris_state(0,t_ephm,astro.Earth,astro.Moon);
     rE          = ephm_state(1:3)'/astro.l_star;          % Normalized Earth position in MIF
     rEsc        = rE - rsc;                         % Normalized spacecraft to Earth vector in MIF
     dx(4:6)     = dx(4:6) + astro.ndGM_Earth*(rEsc/norm(rEsc)^3 - rE/norm(rE)^3);
     
     % Perturbing body gravitational force: Sun
-    ephm_state  = EM_L2.ephemeris_state(0,t_ephm,astro.Sun,astro.Moon);
+    ephm_state  = plant.EM_L2.ephemeris_state(0,t_ephm,astro.Sun,astro.Moon);
     rS          = ephm_state(1:3)'/astro.l_star;          % Normalized Sun position in MIF
     rSsc        = rS - rsc;                         % Normalized spacecraft to Sun vector in MIF
     dx(4:6)     = dx(4:6) + astro.ndGM_Sun*(rSsc/norm(rSsc)^3 - rS/norm(rS)^3);
@@ -41,7 +41,7 @@ function dx = dyn_func_inert(t,x,astro)
     % Moon J2
     J2          = 2.024e-4; % http://web.gps.caltech.edu/classes/ge131/notes2016/Ch11.pdf
     R_moon      = 1737.1;   % [km]
-    ephm_state  = EM_L2.ephemeris_state(0,t_ephm,astro.Earth,astro.Moon); 
+    ephm_state  = plant.EM_L2.ephemeris_state(0,t_ephm,astro.Earth,astro.Moon); 
     perp_z_vec  = cross(ephm_state(1:3), ephm_state(4:6));
     perp_vec    = -cross(ephm_state(1:3), perp_z_vec);
     M_sc_vec    = rsc'*astro.l_star;
