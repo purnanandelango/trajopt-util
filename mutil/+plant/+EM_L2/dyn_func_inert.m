@@ -1,10 +1,10 @@
-% Compute derivative of state according to equations of motion in N body problem in inertial frame with SRP and J2 considered
+% Compute derivative of state according to equations of motion in N body problem in Moon-centered inertial frame with SRP and J2 considered
 % Output: 
 %   dx          = derivative of the state vector
 % Input:
 %   t           = non dimensional time 
 %   x           = non dimensional state vector [x pos, y pos, z pos, x velo, y velo, z velo]
-%   astro       = structure of constants
+%   astro       = structure of astrodynamics constants
 % 
 % MIF == Moon-centered inertial frame
 function dx = dyn_func_inert(t,x,astro)
