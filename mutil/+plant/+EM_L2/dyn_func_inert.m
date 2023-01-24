@@ -1,4 +1,4 @@
-% Compute derivative of state according to equations of motion in N body problem in Moon-centered inertial frame with SRP and J2 considered
+% Compute derivative of state according to equations of motion in N body problem in Moon-centered inertial frame with SRP and Moon J2 considered
 % Output: 
 %   dx          = derivative of the state vector
 % Input:
