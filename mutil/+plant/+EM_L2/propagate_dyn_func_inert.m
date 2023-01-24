@@ -3,6 +3,6 @@ function [x_sol_inert, t] = propagate_dyn_func_inert(x_init,tspan,astro)
     
     % Integrate with MATLAB ODE solver
     opts            = odeset('Reltol',1e-8,'AbsTol',1e-8);
-    [t,x_sol_inert] = ode45(@(t,x) EM_L2.dyn_func(t,x,astro),tspan,x_init,opts);
+    [t,x_sol_inert] = ode113(@(t,x) plant.EM_L2.dyn_func(t,x,astro),tspan,x_init,opts);
 
 end
