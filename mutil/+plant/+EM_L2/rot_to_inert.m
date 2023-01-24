@@ -1,4 +1,4 @@
-% Transform Moon-centered inertial frame state to Moon-centered rotating frame
+% Transform Moon-centered rotating frame state to Moon-centered inertial frame
 function [x_inert,T_rot_to_inert] = rot_to_inert(x_rot,t,astro)
     
     N = length(t);
