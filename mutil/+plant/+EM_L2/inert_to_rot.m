@@ -1,14 +1,11 @@
 % Transform Moon-centered inertial frame state to Moon-centered rotating frame
-% Output:
-%   
-% Input:
 function [x_rot,T_inert_to_rot] = inert_to_rot(x_inert,t,astro)
 
     N = length(t);
     
     x_rot = zeros(N,6);
     for j=1:N
-        ephm_state = EM_L2.ephemeris_state(t(j)*astro.t_star/(24*3600),astro.start_JD,astro.Moon,astro.Earth);        
+        ephm_state = plant.EM_L2.ephemeris_state(t(j)*astro.t_star/(24*3600),astro.start_JD,astro.Moon,astro.Earth);        
         pos = ephm_state(1,1:3)';
         vel = ephm_state(1,4:6)';
 
