@@ -1,3 +1,4 @@
+% Validate the propagation functions against the result of existing C++ code
 clc
 clearvars
 close all
