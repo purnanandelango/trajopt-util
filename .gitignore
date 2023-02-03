@@ -5,3 +5,4 @@
 *.fls
 *.log
 *.synctex.gz
+.vscode

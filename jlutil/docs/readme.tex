@@ -26,6 +26,18 @@
 
 To track known state reference $x_t^{\text{ref}}$ and/or a control reference $u^{\text{ref}}_t$, choose $q_t = -2x_t^{\text{ref}}$ and $r_t = -2u^{\text{ref}}_t$. The boundary conditions on states and control are accounted in \eqref{eq:x-u-proj-cnstr}.
 
+\section{Conic Optimization Problem}
+
+\begin{subequations}
+\begin{align}
+    \operatorname{minimize}~~&~\frac{1}{2}z^\top P  z + p^\top z\\
+    \operatorname{subject~to}~~&~Hz-g \in \mathbb{K},\\
+    &~z\in\mathbb{D}.    
+\end{align}    
+\end{subequations}
+
+\section{Extrapolated PIPG (\textsc{xpipg})}
+
 \section{Template Extension to General SOCPs}
 
 % \begin{subequations}
