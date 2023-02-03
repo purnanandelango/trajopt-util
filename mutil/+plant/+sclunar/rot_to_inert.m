@@ -5,7 +5,7 @@ function [x_inert,T_rot_to_inert] = rot_to_inert(x_rot,t,astro)
     
     x_inert = zeros(1,6);
     for j=1:N
-        ephm_state = plant.EM_L2.ephemeris_state(t(j)*astro.t_star/(24*3600),astro.start_JD,astro.Moon,astro.Earth);
+        ephm_state = plant.sclunar.ephemeris_state(t(j)*astro.t_star/(24*3600),astro.start_JD,astro.Moon,astro.Earth);
         pos = ephm_state(1,1:3)';
         vel = ephm_state(1,4:6)';
 

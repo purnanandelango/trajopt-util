@@ -1,5 +1,7 @@
 # Utilities for Numerical Trajectory Optimization
 
+This repository is intended to be used as a submodule.
+
 ## Requirements
 
  - [YALMIP](https://yalmip.github.io/) &ndash; for formulating and solving trajectory optimization problems.

@@ -9,13 +9,15 @@ function astro = astro_constants()
     astro.GM_Earth      = 398600.432896939; % [km^3/s^2]
     astro.GM_Moon       = 4902.80058214776; % [km^3/s^2]
     astro.muMoon        = astro.GM_Moon/(astro.GM_Earth+astro.GM_Moon);
+    astro.R_Moon        = 1737.1; % [km]
+    astro.Moon_J2       = 2.024e-4; % http://web.gps.caltech.edu/classes/ge131/notes2016/Ch11.pdf
     
     Cr          = 1.15;                                             % Coefficient of reflectivity                    
     W_star      = 1368;                                             % Solar irradiance [kg/s^3]
     c           = 299792458;                                        % Speed of light [m/s]
     P_star      = W_star/c;                                         % [N/m^2]
-    MAR_star    = 2*P_star*(149597870.700)^2/astro.GM_Sun/1000;     % 2*P_star*L_star^2/GM_Sun [kg/m^2]
-    MAR         = 15000/16;                                         % [kg/m^2]
+    MAR_star    = 2*P_star*(149597870.700)^2/(astro.GM_Sun*1000);     % 2*P_star*L_star^2/GM_Sun [kg/m^2]
+    MAR         = 15000/16;                                         % [kg/m^2] (spacecraft mass is 15 kg and its surface area is 16 m^2)
     beta        = MAR_star/MAR;
     astro.Cr_beta       = Cr*beta;
 

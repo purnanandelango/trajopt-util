@@ -7,7 +7,7 @@ addpath('../../../../../OpNav/util');
 addpath('../../../../../OpNav/util_mex');
 
 % Load astrodynamics constants
-astro = plant.EM_L2.astro_constants();
+astro = plant.sclunar.astro_constants();
 
 % Load ephemeris data
 cspice_furnsh( { 'naif0011.tls.pc',...
@@ -17,7 +17,7 @@ cspice_furnsh( { 'naif0011.tls.pc',...
 tspan = [0,14*24*3600/astro.t_star];
 
 tic
-[x2,t2] = plant.EM_L2.propagate_dyn_func_rot(astro.nrho_init,tspan,astro);
+[x2,t2] = plant.sclunar.propagate_dyn_func_rot(astro.nrho_init,tspan,astro);
 x2 = x2 + repmat([1-astro.muMoon,zeros(1,5)],[length(t2),1]);
 fprintf("MATLAB propagator time: %5.3d ms\n",1000*toc);
 
