@@ -1,6 +1,45 @@
 \documentclass[letterpaper,11pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,bm}
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
 
+\title{PIPG Module}
+\author{Purnanand Elango}
 
 \begin{document}
+
+\maketitle 
+
+\section{Template Optimal Control Problem}
+
+\begin{subequations}
+\begin{align}
+    \operatorname{minimize}~~&~\sum_{t=1}^Nx_t^\top Q_t x_t +q_t^\top x_t + u_t^\top R_t u_t + r_t^\top u_t,\\
+    \operatorname{subject~to}~~&~x_{t+1} = A_t x_t + B_t^{-}u_t + B_{t+1}^+u_{t+1} + c_t, & & t = 1,\ldots,N-1,\\
+    &~x_t\in\mathbb{D}^x_t,~~u_t \in \mathbb{D}^u_t, & & t = 1,\ldots, N.\label{eq:x-u-proj-cnstr}  
+\end{align}\label{prb:template-ocp}%
+\end{subequations}
+
+To track known state reference $x_t^{\text{ref}}$ and/or a control reference $u^{\text{ref}}_t$, choose $q_t = -2x_t^{\text{ref}}$ and $r_t = -2u^{\text{ref}}_t$. The boundary conditions on states and control are accounted in \eqref{eq:x-u-proj-cnstr}.
+
+\section{Template Extension to General SOCPs}
+
+% \begin{subequations}
+\begin{align*}
+    \operatorname{minimize}~~&~\sum_{t=1}^Nx_t^\top Q_t x_t +q_t^\top x_t + u_t^\top R_t u_t + r_t^\top u_t,\\
+    \operatorname{subject~to}~~&~~~x_{t+1} = A_t x_t + B_t^{-}u_t + B_{t+1}^+u_{t+1} + c_t, & & t = 1,\ldots,N-1,\\
+        & \left. \begin{array}{l} 
+        x_t\in\mathbb{D}^x_t,~~u_t \in \mathbb{D}^u_t,\\[0.1cm]
+        F^0_t x_t + G^0_t u_t + h^0_t = 0, \\[0.1cm]
+        F^1_t x_t + G^1_t u_t + h^1_t \le 0, \\[0.1cm]
+        F^2_t x_t + G^2_t u_t + h^2_t \preceq_{2} 0 , \end{array} \right\} & & t = 1,\ldots, N,  
+\end{align*}
+% \end{subequations}
+
+where $\preceq_2$ is the generalized inequality representing a second-order cone.
 
 \end{document}
