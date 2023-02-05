@@ -12,16 +12,23 @@
 \usepackage{algpseudocode}
 \usepackage{algorithm}
 
-\algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
+\algnewcommand{\LineComment}[1]{\Statex \(\triangleright\) \textcolor{black!60}{#1}}
 
 \setlength{\parskip}{0pt}
 \setlength{\parindent}{0pt}
 
 % Definitions
 \newcommand{\xpipg}{\textsc{\relsize{-1}x\relsize{1}pipg}}
+\newcommand{\tlx}{\tilde{x}}
+\newcommand{\tlu}{\tilde{u}}
+\newcommand{\tlphi}{\tilde{\phi}}
+\newcommand{\tltheta}{\tilde{\theta}}
+\newcommand{\tlpsi}{\tilde{\psi}}
+\newcommand{\ssb}[1]{{\scriptscriptstyle #1}}
 
 \title{PIPG Module}
 \author{Purnanand Elango}
+\date{February 5, 2023}
 
 \begin{document}
 
@@ -29,35 +36,39 @@
 
 \section{Template Optimal Control Problem}
 
-% \begin{subequations}
-% \begin{align}
-%     \operatorname{minimize}~~&~\sum_{t=1}^Nx_t^\top Q_t x_t +q_t^\top x_t + u_t^\top R_t u_t + r_t^\top u_t,\\
-%     \operatorname{subject~to}~~&~x_{t+1} = A_t x_t + B_t^{-}u_t + B_{t+1}^+u_{t+1} + c_t, & & t = 1,\ldots,N-1,\\
-%     &~x_t\in\mathbb{D}^x_t,~~u_t \in \mathbb{D}^u_t, & & t = 1,\ldots, N.\label{eq:x-u-proj-cnstr}  
-% \end{align}\label{prb:template-ocp}%
-% \end{subequations}
+\begin{subequations}
+\begin{align}
+    \operatorname{minimize}~~&~\sum_{t=1}^N \frac{1}{2}x_t^\top Q_t x_t +q_t^\top x_t + \frac{1}{2}u_t^\top R_t u_t + r_t^\top u_t,\\
+    \operatorname{subject~to}~~&~x_{t+1} = A_t x_t + B_t^{-}u_t + B_{t+1}^+u_{t+1} + c_t, & & t = 1,\ldots,N-1,\\
+    &~x_t\in\mathbb{D}^x_t,~~u_t \in \mathbb{D}^u_t, & & t = 1, \ldots, N,\label{eq:x-u-proj-cnstr}\\
+    &~F^0_t x_t + G^0_t u_t + g^0_t = 0, & & t = 1, \ldots, N,\label{eq:x-u-zerocone}\\
+    &~F^1_t x_t + G^1_t u_t + g^1_t \ge 0, & & t = 1, \ldots, N.\label{eq:x-u-orthcone} 
+\end{align}\label{prb:template-ocp}%
+\end{subequations}
 
 % \begin{subequations}
-\begin{align*}
-    \underset{x_t,u_t}{\operatorname{minimize}}~~~&~\sum_{t=1}^N\frac{1}{2}x_t^\top Q_t x_t +q_t^\top x_t + \frac{1}{2}u_t^\top R_t u_t + r_t^\top u_t,\\
-    \operatorname{subject~to}~~&~~~x_{t+1} = A_t x_t + B_t^{-}u_t + B_{t+1}^+u_{t+1} + c_t, & & t = 1,\ldots,N-1,\\
-        & \left. \begin{array}{l} 
-        x_t\in\mathbb{D}^x_t,~~u_t \in \mathbb{D}^u_t,\\[0.1cm]
-        F^0_t x_t + G^0_t u_t + g^0_t = 0, \\[0.1cm]
-        F^1_t x_t + G^1_t u_t + g^1_t \ge 0, \end{array} \right\} & & t = 1,\ldots, N,  
-\end{align*}
+% \begin{align*}
+%     \underset{x_t,u_t}{\operatorname{minimize}}~~~&~\sum_{t=1}^N\frac{1}{2}x_t^\top Q_t x_t +q_t^\top x_t + \frac{1}{2}u_t^\top R_t u_t + r_t^\top u_t,\\
+%     \operatorname{subject~to}~~&~~~x_{t+1} = A_t x_t + B_t^{-}u_t + B_{t+1}^+u_{t+1} + c_t, & & t = 1,\ldots,N-1,\\
+%         & \left. \begin{array}{l} 
+%         x_t\in\mathbb{D}^x_t,~~u_t \in \mathbb{D}^u_t,\\[0.1cm]
+%         F^0_t x_t + G^0_t u_t + g^0_t = 0, \\[0.1cm]
+%         F^1_t x_t + G^1_t u_t + g^1_t \ge 0, \end{array} \right\} & & t = 1,\ldots, N,  
+% \end{align*}
 % \end{subequations}
 
-To track known state reference $x_t^{\text{ref}}$ and/or a control reference $u^{\text{ref}}_t$, choose $q_t = -2x_t^{\text{ref}}$ and $r_t = -2u^{\text{ref}}_t$. The boundary conditions on states and control are accounted in $\mathbb{D}^x_t$ and $\mathbb{D}^u_t$.
+To track known state reference $x_t^{\text{ref}}$ and/or a control reference $u^{\text{ref}}_t$, choose $q_t = -2x_t^{\text{ref}}$ and $r_t = -2u^{\text{ref}}_t$. The boundary conditions on states and control are accounted in $\mathbb{D}^x_1,\mathbb{D}^x_N,\mathbb{D}^u_1$, and $\mathbb{D}^u_N$.
 
 \section{Conic Optimization Problem}
+
+The optimal control problem \eqref{prb:template-ocp} falls in the class of conic optimization problems represented by \eqref{prb:conic-prb}, where the convex set $\mathbb{D}$ and convex cone $\mathbb{K}$ are easy to project onto (potentially with closed form expressions).
 
 \begin{subequations}
 \begin{align*}
 \underset{z}{\operatorname{minimize}}~~~&~\frac{1}{2}z^\top P  z + p^\top z\\
     \operatorname{subject~to}~~&~Hz + h \in \mathbb{K},\\
     &~z\in\mathbb{D}.    
-\end{align*}    
+\end{align*}\label{prb:conic-prb}    
 \end{subequations}
 
 \section{Extrapolated PIPG (\xpipg)}
@@ -67,14 +78,18 @@ To track known state reference $x_t^{\text{ref}}$ and/or a control reference $u^
 \setstretch{1.18}
 \label{alg:xpipg-vec}
 \begin{algorithmic}[1]
-    \Require $\alpha,\beta,\rho,\xi,\eta$
+    \Require $\alpha,\beta,\rho,k_{\max}$
+    \LineComment{Initialize: $\xi,\eta$}
     \For{$k = 1,\ldots,k_{\max}-1$}
+        \LineComment{Primal update}
         \State $z \gets \Pi_{\mathbb{D}}\left[ \xi - \alpha (P\xi + p + H^\top\eta) \right]$
+        \LineComment{Dual update}
         \State $w \gets \Pi_{\mathbb{K}^\circ}\left[ \eta + \beta ( H (2z-\xi) + h ) \right]$
+        \LineComment{Extrapolation}
         \State $\xi \gets (1-\rho)\xi + \rho z$
         \State $\eta \gets (1-\rho)\eta + \rho w$
     \EndFor
-    \Ensure $z^{k_{\max}},\,w^{k_{\max}}$
+    \Ensure $z,\,w$
 \end{algorithmic}
 \end{algorithm}
 
@@ -115,54 +130,44 @@ The step sizes $\alpha$ and $\beta$ are dependent on the maximum eigenvalues of 
 
 \section{Customization of \xpipg{} to Template OCP}
 
-\newcommand{\tlx}{\tilde{x}}
-\newcommand{\tlu}{\tilde{u}}
-\newcommand{\tlphi}{\tilde{\phi}}
-\newcommand{\tltheta}{\tilde{\theta}}
-\newcommand{\tlpsi}{\tilde{\psi}}
+The notation $a_\ssb{1:M}$ in Algorithm \ref{alg:xpipg-devec} denotes the collection of vectors $a_t$, for $t=1\ldots,M$, arranged into a 2D array.
 
 \begin{algorithm}[!htpb]
     \caption{Customized \xpipg}
     \setstretch{1.18}
     \label{alg:xpipg-devec}
     \begin{algorithmic}[1]
-        \Require $\alpha,\beta,\rho,\tlx_t,\tlu_t,\tlphi_t,\tltheta_t,\tlpsi_t$
-        \LineComment{Initialization}
-        \State $\tlphi_0,\,\tlphi_N,\,A_N,\,B^+_1,\,B^-_N \gets 0$
+        \Require $\alpha,\beta,\rho,k_{\max}$
+        \LineComment{Initialize: $\tlx_\ssb{1:N},\tlu_\ssb{1:N},\tlphi_\ssb{1:N-1},\tltheta_\ssb{1:N},\tlpsi_\ssb{1:N}$}
+        % \State $\tlphi_0,\,\tlphi_N,\,A_N,\,B^+_1,\,B^-_N \gets 0$
         \For{$k = 1,\ldots,k_{\max}-1$}
             \LineComment{Primal update}
-            % \State $x_1 \gets \Pi_{\mathbb{D}_1^x}\left[ \tlx_1 - \alpha \left( Q_1\tlx_1 + q_1 + A_1^\top\tlphi_1 + {F^0_1}^\top\tltheta_1 + {F^1_1}^\top\tlpsi_1 \right)  \right]$
-            % \State $u_1 \gets \Pi_{\mathbb{D}_1^u}\left[ \tlu_1 - \alpha \left( R_1\tlu_1 + r_1 + {B^-_1}^\top\tlphi_1 + {G^0_1}^\top\tltheta_1 + {G^1_1}^\top\tlpsi_1 \right) \right]$        
-            \For{$t = 1,\ldots,N$}
+            \State $x_1 \gets \Pi_{\mathbb{D}_1^x}\left[ \tlx_1 - \alpha \left( Q_1\tlx_1 + q_1 + A_1^\top\tlphi_1 + {F^0_1}^\top\tltheta_1 + {F^1_1}^\top\tlpsi_1 \right)  \right]$
+            \State $u_1 \gets \Pi_{\mathbb{D}_1^u}\left[ \tlu_1 - \alpha \left( R_1\tlu_1 + r_1 + {B^-_1}^\top\tlphi_1 + {G^0_1}^\top\tltheta_1 + {G^1_1}^\top\tlpsi_1 \right) \right]$        
+            \For{$t = 2,\ldots,N-1$}
                 \State $x_t \gets \Pi_{\mathbb{D}_t^x}\left[ \tlx_t - \alpha \left( Q_t\tlx_t + q_t + A_t^\top\tlphi_t - \tlphi_{t-1} + {F^0_t}^\top\tltheta_t + {F^1_t}^\top\tlpsi_t \right)  \right]$
                 \State $u_t \gets \Pi_{\mathbb{D}_t^u}\left[ \tlu_t - \alpha \left( R_t\tlu_t + r_t + {B^-_t}^\top\tlphi_t + {B^+_{t}}^\top\tlphi_{t-1} + {G^0_t}^\top\tltheta_t + {G^1_t}^\top \tlpsi_t \right) \right]$
             \EndFor
-            % \State $x_N \gets \Pi_{\mathbb{D}_N^x}\left[ \tlx_N - \alpha \left( Q_N\tlx_N + q_N - \tlphi_{N-1} + {F^0_N}^\top\tltheta_N + {F^1_N}^\top\tlpsi_N \right)  \right]$
-            % \State $u_N \gets \Pi_{\mathbb{D}_N^u}\left[ \tlu_N - \alpha \left( R_N\tlu_N + r_N + {B^+_{N}}^\top\tlphi_{N-1} + {G^0_N}^\top\tltheta_N + {G^1_N}^\top \tlpsi_N \right) \right]$           
+            \State $x_N \gets \Pi_{\mathbb{D}_N^x}\left[ \tlx_N - \alpha \left( Q_N\tlx_N + q_N - \tlphi_{N-1} + {F^0_N}^\top\tltheta_N + {F^1_N}^\top\tlpsi_N \right)  \right]$
+            \State $u_N \gets \Pi_{\mathbb{D}_N^u}\left[ \tlu_N - \alpha \left( R_N\tlu_N + r_N + {B^+_{N}}^\top\tlphi_{N-1} + {G^0_N}^\top\tltheta_N + {G^1_N}^\top \tlpsi_N \right) \right]$           
             \LineComment{Dual update}
             \For{$t = 1,\ldots,N-1$}
                 \State $\phi_t \gets \tlphi_t + \beta \left( -2x_{t+1}+\tlx_{t+1} + A_t(2x_t-\tlx_t)+B^-_t(2u_t-\tlu_t)+B^+_{t+1}(2u_{t+1}-\tlu_{t+1}) + c_t \right)$
                 \State $\theta_t \gets \tltheta_t + \beta \left( F^0_t(2x_t-\tlx_t) + G^0_t(2u_t-\tlu_t) + g^0_t \right)$
-                \State $\psi_t \gets \tlpsi_t + \beta \left( F^1_t(2x_t-\tlx_t) + G^1_t(2u_t-\tlu_t) + g^1_t \right)$ 
-                \State $\psi_t \gets \psi_t - \max\{\psi_t,0\}$               
+                \State $\psi_t \gets \min\left\{\tlpsi_t + \beta \left( F^1_t(2x_t-\tlx_t) + G^1_t(2u_t-\tlu_t) + g^1_t \right),0\right\}$ 
+                % \State $\psi_t \gets \psi_t - \max\{\psi_t,0\}$               
             \EndFor
             \State $\theta_N \gets \tltheta_N + \beta \left( F^0_N(2x_N-\tlx_N) + G^0_N(2u_N-\tlu_N) + g^0_N \right)$
-            \State $\psi_N \gets \tlpsi_N + \beta \left( F^1_N(2x_N-\tlx_N) + G^1_N(2u_N-\tlu_N) + g^1_N \right)$ 
-            \State $\psi_N \gets \psi_N - \max\{\psi_N,0\}$
+            \State $\psi_N \gets \min\left\{\tlpsi_N + \beta \left( F^1_N(2x_N-\tlx_N) + G^1_N(2u_N-\tlu_N) + g^1_N \right),0\right\}$ 
+            % \State $\psi_N \gets \psi_N - \max\{\psi_N,0\}$
             \LineComment{Extrapolation}
-            \For{$t = 1,\ldots,N-1$}
-                \State $\tlx_t \gets (1-\rho)\tlx_t + \rho x_t$
-                \State $\tlu_t \gets (1-\rho)\tlu_t + \rho u_t$
-                \State $\tlphi_t \gets (1-\rho)\tlphi_t + \rho \phi_t$
-                \State $\tltheta_t \gets (1-\rho)\tltheta_t + \rho \theta_t$
-                \State $\tlpsi_t \gets (1-\rho)\tlpsi_t + \rho \psi_t$
-            \EndFor
-            \State $\tlx_N \gets (1-\rho)\tlx_N + \rho x_N$
-            \State $\tlu_N \gets (1-\rho)\tlu_N + \rho u_N$
-            \State $\tltheta_N \gets (1-\rho)\tltheta_N + \rho \theta_N$
-            \State $\tlpsi_N \gets (1-\rho)\tlpsi_N + \rho \psi_N$            
+            \State $\tlx_\ssb{1:N} \gets (1-\rho)\tlx_\ssb{1:N} + \rho x_\ssb{1:N}$
+            \State $\tlu_\ssb{1:N} \gets (1-\rho)\tlu_\ssb{1:N} + \rho u_\ssb{1:N}$
+            \State $\tlphi_\ssb{1:N-1} \gets (1-\rho)\tlphi_\ssb{1:N-1} + \rho \phi_\ssb{1:N-1}$
+            \State $\tltheta_\ssb{1:N} \gets (1-\rho)\tltheta_\ssb{1:N} + \rho \theta_\ssb{1:N}$
+            \State $\tlpsi_\ssb{1:N} \gets (1-\rho)\tlpsi_\ssb{1:N} + \rho \psi_\ssb{1:N}$
         \EndFor
-        \Ensure $x_t,u_t,\phi_t,\theta_t,\psi_t$
+        \Ensure $x_\ssb{1:N},u_\ssb{1:N},\phi_\ssb{1:N-1},\theta_\ssb{1:N},\psi_\ssb{1:N}$
     \end{algorithmic}
 \end{algorithm}
 
