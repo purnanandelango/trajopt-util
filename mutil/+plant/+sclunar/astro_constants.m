@@ -9,21 +9,24 @@ function astro = astro_constants()
     astro.GM_Earth      = 398600.432896939; % [km^3/s^2]
     astro.GM_Moon       = 4902.80058214776; % [km^3/s^2]
     astro.muMoon        = astro.GM_Moon/(astro.GM_Earth+astro.GM_Moon);
-    astro.R_Moon        = 1737.1; % [km]
-    astro.Moon_J2       = 2.024e-4; % http://web.gps.caltech.edu/classes/ge131/notes2016/Ch11.pdf
     
-    Cr          = 1.15;                                             % Coefficient of reflectivity                    
-    W_star      = 1368;                                             % Solar irradiance [kg/s^3]
-    c           = 299792458;                                        % Speed of light [m/s]
-    P_star      = W_star/c;                                         % [N/m^2]
-    MAR_star    = 2*P_star*(149597870.700)^2/(astro.GM_Sun*1000);     % 2*P_star*L_star^2/GM_Sun [kg/m^2]
-    MAR         = 15000/16;                                         % [kg/m^2] (spacecraft mass is 15 kg and its surface area is 16 m^2)
-    beta        = MAR_star/MAR;
-    astro.Cr_beta       = Cr*beta;
+    astro.R_Moon        = 1737.1;       % Moon radius [km]
+    astro.Moon_J2       = 2.024e-4;     % Moon zonal J2 value: http://web.gps.caltech.edu/classes/ge131/notes2016/Ch11.pdf
+    astro.Moon_eqincl   = 6.68*pi/180;  % Moon equitorial inclination [rad]
 
     astro.l_star        = 385692.5;         % [km]
     astro.t_star        = 377084.152667039; % [s]
     astro.v_star        = astro.l_star/astro.t_star;    % [km/s]
+
+    ksc         = 1.15;                                             % Coefficient of reflectivity                    
+    S0          = 1360;                                             % Solar irradiance at 1 AU [W/m^2 or kg/s^3]
+    r0          = 1495978707;                                       % 1 AU [km] 
+    c           = 299792.458;                                       % Speed of light [km/s]
+    Msc         = 15000;                                            % Mass of spacecraft [kg]
+    Asc         = 16*1e-6;                                          % Cross-sectional area of spacecraft [km^2] 
+    S0bycMsc    = S0/(Msc*c);                                       % [km^-1 s^-2]
+    astro.SRP   = ksc*Asc*S0bycMsc*r0^2;                            % [km^3/s^2]
+    astro.SRP   = astro.SRP*(astro.t_star^2)/(astro.l_star^3);      % [ndim]
 
     astro.start_JD      = 2459957.5; % Jan 13,2023 (Julian date) [day]
 

@@ -2,27 +2,21 @@ clearvars
 close all
 clc
 
-astro = plant.sclunar.astro_constants();
+rsc = sym('rsc_%d',[3,1]);
+vsc = sym('vsc_%d',[3,1]);
+rE = sym('rE_%d',[3,1]);
+rS = sym('rS_%d',[3,1]);
+vE = sym('vE_%d',[3,1]);
+vS = sym('vS_%d',[3,1]);
+syms GME GMM GMS SRP
 
-t = sym('t');
-x = sym('x_%d',[6,1]);
-dx = sym('dx_%d',[6,1]);
-x_M2E = sym('xM2E_%d',[6,1]);
+drscdt         = vsc;
+dvscdt         = -GMM*rsc/norm(rsc)^3 + GME*( (rE-rsc)/norm(rE-rsc)^3 - rE/norm(rE)^3 ) + GMS*( (rS-rsc)/norm(rS-rsc)^3 - rS/norm(rS)^3 ) ...
+                 -SRP*GMS*(rS-rsc)/norm(rS-rsc)^3 ...
+                 +;
 
-t_ephm = astro.start_JD + t*astro.t_star/(24*3600);
+jac_x_dxdt     = simplify(jacobian([drscdt;dvscdt],[rsc;vsc]),Steps=100);
+jac_t_dxdt     = [zeros(3,1);
+                  simplify(jacobian(dvscdt,rE)*vE,Steps=100) + simplify(jacobian(dvscdt,rS)*vS,Steps=100)];
 
-rsc = x(1:3);               % Normalized spacecraft position in MIF
-vsc = x(4:6);               % Normalized spacecraft position in MIF
-sc_dist = norm(rsc);        % Spacecraft distance to Moon
-
-dx(1:3) = vsc;
-
-% Primary body gravitational force: Moon
-dx(4:6) = -astro.ndGM_Moon*rsc/sc_dist^3;
-
-% Perturbing body gravitatinal force: Earth
-ephm_state  = plant.sclunar.ephemeris_state(0,t_ephm,astro.Earth,astro.Moon);
-rE          = ephm_state(1:3)'/astro.l_star;            % Normalized Earth position in MIF
-rEsc        = rE - rsc;                                 % Normalized spacecraft to Earth vector in MIF
-dx(4:6)     = dx(4:6) + astro.ndGM_Earth*(rEsc/norm(rEsc)^3 - rE/norm(rE)^3);
-
+matlabFunction(jac_t_dxdt,jac_x_dxdt,'File','dyn_fun_jacobian_inert.m',)

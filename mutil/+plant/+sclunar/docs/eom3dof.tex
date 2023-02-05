@@ -1,0 +1,79 @@
+\documentclass[12pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage{microtype}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+
+\title{High-fidelity Spacecraft Dynamics in Cislunar Space}
+\author{Purnanand Elango}
+\date{February 4, 2023}
+
+% Definitions
+\renewcommand{\dot}[1]{\overset{\text{{\large .}}}{#1}}
+\newcommand{\rsc}{r_{\scriptscriptstyle\text{sc}}}
+\newcommand{\vsc}{v_{\scriptscriptstyle\text{sc}}}
+\newcommand{\drsc}{\dot{r}_{\scriptscriptstyle\text{sc}}}
+\newcommand{\dvsc}{\dot{v}_{\scriptscriptstyle\text{sc}}}
+\newcommand{\rE}{r_{\scriptscriptstyle\text{E}}}
+\newcommand{\rS}{r_{\scriptscriptstyle \text{S}}}
+\newcommand{\vE}{v_{\scriptscriptstyle \text{E}}}
+\newcommand{\ME}{M_{\scriptscriptstyle \text{E}}}
+\newcommand{\MM}{M_{\scriptscriptstyle \text{M}}}
+\newcommand{\MS}{M_{\scriptscriptstyle \text{S}}}
+\newcommand{\RM}{R_{\scriptscriptstyle \text{M}}}
+\newcommand{\MJtwo}{M_{\scriptscriptstyle \text{J2}}}
+\newcommand{\thteq}{\theta_{\text{eq}}}
+\newcommand{\ksc}{k_{\scriptscriptstyle\text{sc}}}
+\newcommand{\Msc}{M_{\scriptscriptstyle\text{sc}}}
+\newcommand{\Asc}{A_{\scriptscriptstyle\text{sc}}}
+
+\begin{document}
+
+\maketitle
+
+Equations of motion in the Mean Equator Mean Equinox (MEME) J2000 inertial frame with the origin at the instantaneous center of the Moon.  
+
+\begin{subequations}
+\begin{align}
+    \drsc ={} &\vsc\\
+    \dvsc ={} & \displaystyle-G\MM \frac{\rsc}{\|\rsc\|_2^3} + G\ME\left( \frac{\rE - \rsc}{\| \rE - \rsc \|_2^3} - \frac{\rE}{\|\rE\|_2^3}\right) + G\MS\left( \frac{\rS - \rsc}{\| \rS - \rsc \|_2^3} - \frac{\rS}{\|\rS\|_2^3}\right) \nonumber \\
+     & - \frac{\ksc\Asc S_0r_0^2}{\Msc c} \left( \frac{\rS - \rsc}{\| \rS - \rsc \|_2^3} \right)\\
+     & + \frac{3}{2}G\MM\MJtwo\RM^2\frac{\rsc}{\|\rsc\|_2^5}\left( 3\sin^2 \left( \arccos\left(\frac{\rsc^\top\rE - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE^\top\rE}{\|\rE\|_2\left\| \rsc - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE \right\|_2}\right)+\thteq\right) - 1 \right)\nonumber
+\end{align}    
+\end{subequations}
+
+\begin{table}[!htpb]
+\centering
+\begin{tabular}{l|l}
+\hline
+ $\rsc$ & Position of spacecraft with respect to Moon\\   
+ $\vsc$ & Velocity of spacecraft with respect to Moon\\
+ $\rE$  & Position of Earth with respect to Moon\\
+ $\vE$  & Velocity of Earth with respect to Moon\\
+ $\rS$  & Position of Sun with respect to Moon\\
+ $\ksc$ & Reflectivity of spacecraft body\\ 
+ $r_0$  & 1 AU\\
+ $\Asc$ & Cross-sectional area of spacecraft\\   
+ $S_0$  & Solar flux at distance $r_0$ from Sun\\
+ $c$    & Speed of light in vacuum\\
+ $G$    & Universal gravitational constant\\
+ $\Msc$ & Mass of spacecraft\\
+ $\ME$  & Mass of Earth\\
+ $\MM$  & Mass of Moon\\
+ $\MS$  & Mass of Sun\\
+ $\MJtwo$ & J2 zonal harmonic coefficient for Moon, $2.024\times 10^{-4}$\\
+ $\RM$    & Radius of Moon, 1737.1 km\\
+ $\thteq$ & Equitorial inclination of Moon, 6.68$^\circ$\\
+\hline
+\end{tabular}
+\end{table}
+
+The cannonball model of solar radiation pressure assumed here, represents the spacecraft as a sphere. As a result, the cross-sectional area $\Asc$ experiencing solar radiation is independent of spacecraft orientation.
+
+% \begin{align}
+%     a_{\text{J}_2} ={} & \sin^2 \left( \arccos\left(\frac{\rsc^\top\rE - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE^\top\rE}{\|\rE\|_2\left\| \rsc - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE \right\|_2}\right)+\thteq\right)    
+% \end{align}
+
+\end{document}
