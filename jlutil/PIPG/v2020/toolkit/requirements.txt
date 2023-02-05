@@ -1,4 +1,4 @@
-# Required Packages
+Required Packages
 
  - JuMP
  - *Gurobi
