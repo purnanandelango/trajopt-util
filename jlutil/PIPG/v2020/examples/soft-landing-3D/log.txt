@@ -1,0 +1,10 @@
+12/15/20
+
+example 7   : 	3D soft-landing problem with only translational dynamics (no mass dynamics)
+formulation : 	constrained LQR
+constraints :
+    	      	glide-slope
+              	gimbal angle
+    		  	thrust upper bound
+              	thrust lower bound
+               	velocity upper bound

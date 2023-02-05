@@ -1,0 +1,9 @@
+03/01/21
+
+example 11  : quadrotor (3D double integrator) planning with two obstacles (adapted from example 8)
+formulation : constrained LQR
+constraints :
+	      two collision avoidance constraint in position at every time instant
+	      upper bound on 2-norm of velocity
+	      upper bound on 2-norm of thrust
+	      thrust pointing constraint

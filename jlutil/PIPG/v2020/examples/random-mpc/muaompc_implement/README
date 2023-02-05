@@ -1,0 +1,6 @@
+04/20/21
+Random MPC example
+
+Always make sure to make c files then compile them when any of the problem parameters
+u_ref can be varying random values while x_ref cannot. The cvx-mosek and muaompc solutions 
+don't match with varying random x_ref

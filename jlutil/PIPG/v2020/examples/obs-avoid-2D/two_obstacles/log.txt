@@ -1,0 +1,8 @@
+02/24/21
+
+example 8   : 2D double integrator planning with two obstacles (adapted from example 6)
+formulation : constrained LQR
+constraints :
+	      two collision avoidance constraint in position at every time instant
+	      upper bound on 2-norm of velocity
+	      
