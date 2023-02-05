@@ -10,15 +10,42 @@
 \author{Purnanand Elango}
 \date{February 4, 2023}
 
+\setlength{\parskip}{1ex}
+\setlength{\parindent}{0pt}
+
+% TikZ
+\usepackage{physics}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{mathdots}
+\usepackage{yhmath}
+\usepackage{cancel}
+\usepackage{color}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{textcomp,gensymb}
+\usepackage{tabularx}
+\usepackage{extarrows}
+\usepackage{booktabs}
+\usetikzlibrary{fadings}
+\usetikzlibrary{patterns}
+\usetikzlibrary{shadows.blur}
+\usetikzlibrary{shapes}
+
 % Definitions
 \renewcommand{\dot}[1]{\overset{\text{{\large .}}}{#1}}
 \newcommand{\rsc}{r_{\scriptscriptstyle\text{sc}}}
+\newcommand{\lamsc}{\lambda_{\scriptscriptstyle\text{sc}}}
 \newcommand{\vsc}{v_{\scriptscriptstyle\text{sc}}}
+\newcommand{\brsc}{\bar{r}_{\scriptscriptstyle\text{sc}}}
 \newcommand{\drsc}{\dot{r}_{\scriptscriptstyle\text{sc}}}
 \newcommand{\dvsc}{\dot{v}_{\scriptscriptstyle\text{sc}}}
 \newcommand{\rE}{r_{\scriptscriptstyle\text{E}}}
 \newcommand{\rS}{r_{\scriptscriptstyle \text{S}}}
 \newcommand{\vE}{v_{\scriptscriptstyle \text{E}}}
+\newcommand{\bvE}{\bar{v}_{\scriptscriptstyle \text{E}}}
 \newcommand{\ME}{M_{\scriptscriptstyle \text{E}}}
 \newcommand{\MM}{M_{\scriptscriptstyle \text{M}}}
 \newcommand{\MS}{M_{\scriptscriptstyle \text{S}}}
@@ -40,9 +67,19 @@ Equations of motion in the Mean Equator Mean Equinox (MEME) J2000 inertial frame
     \drsc ={} &\vsc\\
     \dvsc ={} & \displaystyle-G\MM \frac{\rsc}{\|\rsc\|_2^3} + G\ME\left( \frac{\rE - \rsc}{\| \rE - \rsc \|_2^3} - \frac{\rE}{\|\rE\|_2^3}\right) + G\MS\left( \frac{\rS - \rsc}{\| \rS - \rsc \|_2^3} - \frac{\rS}{\|\rS\|_2^3}\right) \nonumber \\
      & - \frac{\ksc\Asc S_0r_0^2}{\Msc c} \left( \frac{\rS - \rsc}{\| \rS - \rsc \|_2^3} \right)\\
-     & + \frac{3}{2}G\MM\MJtwo\RM^2\frac{\rsc}{\|\rsc\|_2^5}\left( 3\sin^2 \left( \arccos\left(\frac{\rsc^\top\rE - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE^\top\rE}{\|\rE\|_2\left\| \rsc - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE \right\|_2}\right)+\thteq\right) - 1 \right)\nonumber
+     & + \frac{3}{2}G\MM\MJtwo\RM^2\frac{\rsc}{\|\rsc\|_2^5}\left( 3\sin^2 \left( \arccos\left(\frac{\rE^\top \brsc}{\|\rE\|_2\|\brsc\|_2}\right)+\thteq\right) - 1 \right),\nonumber
 \end{align}    
 \end{subequations}
+
+where 
+\begin{align}
+    \brsc ={} & \rsc - \displaystyle \frac{\rsc^\top\bvE}{\|\bvE\|^2_2}\bvE,\\
+    \bvE ={} & - \rE \times (\rE\times\vE)  = -\rE^\top(\vE\times\rE).  
+\end{align}
+
+Note that $\rE,\bvE$ and $\rE\times\vE$ form a right-handed set of orthogonal vectors. The projection of spacecraft position vector onto the plane formed by $\rE$ and $\rE\times\vE$ is denoted by $\brsc$. The angle between $\brsc$ and $\rE$, denoted by $\lamsc$, quantifies the Moon latitude closest to the spacecraft. 
+
+\input{EM-picture.tex}
 
 \begin{table}[!htpb]
 \centering
@@ -70,7 +107,7 @@ Equations of motion in the Mean Equator Mean Equinox (MEME) J2000 inertial frame
 \end{tabular}
 \end{table}
 
-The cannonball model of solar radiation pressure assumed here, represents the spacecraft as a sphere. As a result, the cross-sectional area $\Asc$ experiencing solar radiation is independent of spacecraft orientation.
+The cannonball model of solar radiation pressure assumed here represents the spacecraft as a sphere. As a result, the cross-sectional area $\Asc$ experiencing solar radiation is independent of spacecraft orientation.
 
 % \begin{align}
 %     a_{\text{J}_2} ={} & \sin^2 \left( \arccos\left(\frac{\rsc^\top\rE - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE^\top\rE}{\|\rE\|_2\left\| \rsc - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE \right\|_2}\right)+\thteq\right)    
