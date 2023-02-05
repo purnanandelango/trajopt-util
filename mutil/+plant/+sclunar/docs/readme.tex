@@ -5,10 +5,22 @@
 \usepackage{microtype}
 \usepackage[margin=0.7in]{geometry}
 \usepackage{amsmath,amssymb,bm}
+\usepackage{url}
+\usepackage{hyperref}
 
 \title{High-fidelity Spacecraft Dynamics in Cislunar Space}
 \author{Purnanand Elango}
 \date{February 4, 2023}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=purple!20!blue,
+    filecolor=blue!20!purple,      
+    urlcolor=purple!20!blue!60!white,
+    pdftitle={Spacecraft EOM},
+    pdfauthor={Purnanand Elango},
+    citecolor=red!40!white!70!black,
+}
 
 \setlength{\parskip}{1ex}
 \setlength{\parindent}{0pt}
@@ -60,7 +72,7 @@
 
 \maketitle
 
-Equations of motion in the Mean Equator Mean Equinox (MEME) J2000 inertial frame with the origin at the instantaneous center of the Moon.  
+The spacecraft equations of motion are represented in the Earth-centered inertial frame (ECI) defined by Earth's Mean Equator and Mean Equinox (MEME) at 12:00 Terrestrial Time on 1 January 2000, with the origin at the instantaneous Moon center. This frame is labelled as \texttt{J2000} in SPICE.
 
 \begin{subequations}
 \begin{align}
@@ -79,7 +91,7 @@ where
 
 Note that $\rE,\bvE$ and $\rE\times\vE$ form a right-handed set of orthogonal vectors. The projection of spacecraft position vector onto the plane formed by $\rE$ and $\rE\times\vE$ is denoted by $\brsc$. The angle between $\brsc$ and $\rE$, denoted by $\lamsc$, quantifies the Moon latitude closest to the spacecraft. 
 
-\input{EM-picture.tex}
+\input{EM-system.tex}
 
 \begin{table}[!htpb]
 \centering
@@ -112,5 +124,17 @@ The cannonball model of solar radiation pressure assumed here represents the spa
 % \begin{align}
 %     a_{\text{J}_2} ={} & \sin^2 \left( \arccos\left(\frac{\rsc^\top\rE - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE^\top\rE}{\|\rE\|_2\left\| \rsc - \displaystyle \frac{\rsc^\top\vE}{\|\vE\|^2_2}\vE \right\|_2}\right)+\thteq\right)    
 % \end{align}
+
+\subsection*{Accessing Ephemeris via SPICE}
+
+\href{https://naif.jpl.nasa.gov/naif/toolkit.html}{NAIF SPICE} toolkit for MATLAB, called \texttt{mice}, is necessary for querying ephemeris state of celestial bodies in specific coordinate frames. Download \texttt{mice} from \href{https://naif.jpl.nasa.gov/naif/toolkit_MATLAB.html}{here} and include \path{mice\lib} and \path{mice\src\mice} to MATLAB path.
+
+\subsubsection*{Data}
+
+\begin{itemize}
+    \item \texttt{pck00010.tpc} -- Orientation and size/shape data for natural bodies.
+    \item \texttt{naif0011.tls.pc} -- Leap second kernel.
+    \item  \texttt{de421.bsp} -- Position of planets and Moon between 1900 and 2050. See \href{https://ipnpr.jpl.nasa.gov/progress_report/42-178/178C.pdf}{this document} for more details.
+\end{itemize}
 
 \end{document}

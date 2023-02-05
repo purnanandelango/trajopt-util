@@ -4,6 +4,7 @@
 *.fdb_latexmk
 *.fls
 *.log
+*.out
 *.synctex.gz
 .vscode
 .ipynb_checkpoints
