@@ -5,13 +5,21 @@ clc
 srp_flg = true;
 mJ2_flg = false;
 
-rsc = sym('rsc_%d',[3,1]);
-vsc = sym('vsc_%d',[3,1]);
-rE = sym('rE_%d',[3,1]);
-rS = sym('rS_%d',[3,1]);
-vE = sym('vE_%d',[3,1]);
-vS = sym('vS_%d',[3,1]);
+rsc = sym('rsc_%d',[3,1]);  assume(rsc,'real');
+vsc = sym('vsc_%d',[3,1]);  assume(vsc,'real');
+rE = sym('rE_%d',[3,1]);    assume(rE,'real');
+rS = sym('rS_%d',[3,1]);    assume(rS,'real');
+vE = sym('vE_%d',[3,1]);    assume(vE,'real');
+vS = sym('vS_%d',[3,1]);    assume(vS,'real');
 syms GME GMM GMS SRP MJ2 RM Meqincl
+
+assume(GME,'positive');
+assume(GMM,'positive');
+assume(GMS,'positive');
+assume(SRP,'positive');
+assume(MJ2,'positive');
+assume(RM,'positive');
+assume(Meqincl,'positive');
 
 x = [rsc;vsc];
 
