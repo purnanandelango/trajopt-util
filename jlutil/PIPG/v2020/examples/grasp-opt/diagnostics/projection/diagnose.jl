@@ -1,6 +1,6 @@
 
-include("../../../pipg_toolkit/proj_funcs.jl")
-include("../../../pipg_toolkit/linalg_utils.jl")
+include("../../../../toolkit/proj_funcs.jl")
+include("../../../../toolkit/linalg_utils.jl")
 
 module eXd
 using LinearAlgebra, StaticArrays
