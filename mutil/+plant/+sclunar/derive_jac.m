@@ -20,9 +20,11 @@ rscEM          = rsc - dot(rsc,vEprp)*vEprp/norm(vEprp)^2;
 lam_sc         = acos( dot(rE,rscEM)/(norm(rE)*norm(rscEM)) ) + Meqincl;
 
 drscdt         = vsc;
-dvscdt         = -GMM*rsc/norm(rsc)^3 + GME*( (rE-rsc)/norm(rE-rsc)^3 - rE/norm(rE)^3 ) + GMS*( (rS-rsc)/norm(rS-rsc)^3 - rS/norm(rS)^3 );
+dvscdt         = -GMM*rsc/norm(rsc)^3 ...
+                 + GME*( (rE-rsc)/norm(rE-rsc)^3 - rE/norm(rE)^3 ) ...
+                 + GMS*( (rS-rsc)/norm(rS-rsc)^3 - rS/norm(rS)^3 );
 
-a_SRP          = -SRP*GMS*(rS-rsc)/norm(rS-rsc)^3;
+a_SRP          = -SRP*(rS-rsc)/norm(rS-rsc)^3;
 a_J2           = 1.5*GMM*MJ2*(RM^2)*( 3*sin(lam_sc)^2 - 1 )*rsc/norm(rsc)^5;
 
 if srp_flg; dvscdt = dvscdt + a_SRP; end
