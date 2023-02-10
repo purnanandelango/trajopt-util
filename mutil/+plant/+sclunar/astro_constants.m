@@ -36,7 +36,7 @@ function astro = astro_constants()
     astro.ndGM_Moon     = astro.GM_Moon*(astro.t_star^2)/(astro.l_star^3);
 
     % Initial condition of a high-fidelity NRHO baseline in Moon-centered rotating frame
-    astro.nrho_init     = [1.024839452754877  -0.001469610071726  -0.176331432119678  -0.002193318212420  -0.107740373416905  -0.013148385667988] ...
-                          + [astro.muMoon-1,zeros(1,5)];
+    astro.nrho_init     = [1.024839452754877  -0.001469610071726  -0.176331432119678  -0.002193318212420  -0.107740373416905  -0.013148385667988]' ...
+                          + [astro.muMoon-1;zeros(5,1)];
 
 end
