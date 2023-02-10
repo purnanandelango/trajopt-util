@@ -41,7 +41,7 @@ function dx = dyn_func_inert_SRP_J2(t,x,astro)
     vEprp       = -cross(rE,cross(rE,vE));
     rscEM       = rsc - dot(rsc,vEprp)*vEprp/norm(vEprp)^2;
     lam_sc      = acos( dot(rE,rscEM)/(norm(rE)*norm(rscEM)) ) + astro.Moon_eqincl;
-    a_J2 = 1.5*astro.ndGM_Moon*astro.Moon_J2*((astro.R_Moon/astro.l_star)^2)*( 3*sin(lam_sc)^2 - 1 )*rsc/sc_dist^5;
+    a_J2        = 1.5*astro.ndGM_Moon*astro.Moon_J2*((astro.R_Moon/astro.l_star)^2)*( 3*sin(lam_sc)^2 - 1 )*rsc/sc_dist^5;
     
     dx(4:6)      = dx(4:6) + a_J2;
 
