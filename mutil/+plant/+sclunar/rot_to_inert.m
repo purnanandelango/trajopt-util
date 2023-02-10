@@ -1,9 +1,11 @@
 % Transform Moon-centered rotating frame state to Moon-centered inertial frame
+% x_rot and t are non dimensional
+% x_rot contains state vectors stacked along columns
 function [x_inert,T_rot_to_inert] = rot_to_inert(x_rot,t,astro)
     
     N = length(t);
     
-    x_inert = zeros(1,6);
+    x_inert = zeros(6,N);
     for j=1:N
         ephm_state = plant.sclunar.ephemeris_state(t(j)*astro.t_star/(24*3600),astro.start_JD,astro.Moon,astro.Earth);
         pos = ephm_state(1,1:3)';
@@ -22,13 +24,13 @@ function [x_inert,T_rot_to_inert] = rot_to_inert(x_rot,t,astro)
 
         Omega_dot = H/l_star_inst^2;
 
-        x_rot_pos_dim   = x_rot(j,1:3)'*astro.l_star; % l_star_inst
+        x_rot_pos_dim   = x_rot(1:3,j)*astro.l_star; % l_star_inst
         T_rot_to_inert  = [x_hat,y_hat,z_hat];
 
         x_inert_pos_dim = T_rot_to_inert*x_rot_pos_dim;
 
-        x_inert_vel_dim = T_rot_to_inert*x_rot(j,4:6)'*astro.v_star + cross(Omega_dot,x_inert_pos_dim); % v_star_inst
-        x_inert(j,:) = [x_inert_pos_dim/astro.l_star; x_inert_vel_dim/astro.v_star]';                   % l_star, v_star
+        x_inert_vel_dim = T_rot_to_inert*x_rot(4:6,j)*astro.v_star + cross(Omega_dot,x_inert_pos_dim);   % v_star_inst
+        x_inert(:,j)    = [x_inert_pos_dim/astro.l_star; x_inert_vel_dim/astro.v_star];                  % l_star, v_star
         
     end
 
