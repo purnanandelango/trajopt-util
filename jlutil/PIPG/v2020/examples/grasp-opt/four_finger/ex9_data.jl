@@ -1,7 +1,7 @@
 # 01/29/21
 # Grasp force optimization for a 3D block with a four-finger manipulator
 
-const path_to_tools = "../../pipg_toolkit/"
+const path_to_tools = "../../../toolkit/"
 macro load_file(str_val,flg) return :( $flg ? include(string(path_to_tools,$str_val)) : include($str_val) ) end
 
 @load_file "proj_funcs.jl" true			  # library of projection functions	
@@ -16,7 +16,7 @@ using ..la_utils   					      # library of linear algebra utilities
 
 ### User-defined algorithm settings
 
-	const kmax_pipg = 5000			   	  # max PIPG    iterations
+	const kmax_pipg = 10000			   	  # max PIPG    iterations
 	const kmax_powiter = 50				  # max power   iterations
 
 	const ϵ_abs = 1e-10					  # small       absolute tolerance

@@ -28,63 +28,65 @@ function trajectory3D_matlab(x,u,y,N)
 	s3 = mxarray(Array(eX.s3))
 	s4 = mxarray(Array(eX.s4))
 
-	mat"""
-	setfig
+	write_matfile("solfile.mat"; xm=xm, um=um, ym=ym, s1=s1, s2=s2, s3=s3, s4=s4, nx=eX.nx,  nu=eX.nu, N=N)
 
-	x = zeros($(eX.nx),$(N));
-	yy = zeros($(eX.nx),$(N));
-	u = zeros($(eX.nu),$(N)-1);
-	x(:,1) = $(xm){1};
-	yy(:,1) = $(ym){1};
-	for j=1:$(N)-1;
-		x(:,j+1) = $(xm){j+1};
-		u(:,j) = $(um){j};
-		yy(:,j+1) = $(ym){j+1};
-	end
-	s1 = $(s1);
-	s2 = $(s2);
-	s3 = $(s3);
-	s4 = $(s4);
+	# mat"""
+	# setfig
 
-	figure
-	plot3(x(1,:),x(2,:),x(3,:),'.-k','DisplayName','Optimal','MarkerSize',10);
-	hold on
-	plot3(yy(1,:),yy(2,:),yy(3,:),'-.k','DisplayName','Reference');
-	legend('AutoUpdate','off','location','northeast')
-	axis equal
-	axis('manual')
+	# x = zeros($(eX.nx),$(N));
+	# yy = zeros($(eX.nx),$(N));
+	# u = zeros($(eX.nu),$(N)-1);
+	# x(:,1) = $(xm){1};
+	# yy(:,1) = $(ym){1};
+	# for j=1:$(N)-1;
+	# 	x(:,j+1) = $(xm){j+1};
+	# 	u(:,j) = $(um){j};
+	# 	yy(:,j+1) = $(ym){j+1};
+	# end
+	# s1 = $(s1);
+	# s2 = $(s2);
+	# s3 = $(s3);
+	# s4 = $(s4);
 
-	lw = 2;
-	scl = 0.6;
-	scl_box = 2;
-	for j=1:4:$(N)-1
-	    start_pos = x(1:3,j) + scl_box*s1 - scl*u(1:3,j); 
-	    end_pos = x(1:3,j) + scl_box*s1;
-	    arrow(start_pos,end_pos,'tipangle',30,'Color',[0,0,1],'Width',2,'Length',5)
+	# figure
+	# plot3(x(1,:),x(2,:),x(3,:),'.-k','DisplayName','Optimal','MarkerSize',10);
+	# hold on
+	# plot3(yy(1,:),yy(2,:),yy(3,:),'-.k','DisplayName','Reference');
+	# legend('AutoUpdate','off','location','northeast')
+	# axis equal
+	# axis('manual')
 
-	    start_pos = x(1:3,j) + scl_box*s2 - scl*u(4:6,j); 
-	    end_pos = x(1:3,j) + scl_box*s2;
-	    arrow(start_pos,end_pos,'tipangle',30,'Color',[0,1,0],'Width',2,'Length',5) 
+	# lw = 2;
+	# scl = 0.6;
+	# scl_box = 2;
+	# for j=1:4:$(N)-1
+	#     start_pos = x(1:3,j) + scl_box*s1 - scl*u(1:3,j); 
+	#     end_pos = x(1:3,j) + scl_box*s1;
+	#     arrow(start_pos,end_pos,'tipangle',30,'Color',[0,0,1],'Width',2,'Length',5)
+
+	#     start_pos = x(1:3,j) + scl_box*s2 - scl*u(4:6,j); 
+	#     end_pos = x(1:3,j) + scl_box*s2;
+	#     arrow(start_pos,end_pos,'tipangle',30,'Color',[0,1,0],'Width',2,'Length',5) 
 	    
-	    start_pos = x(1:3,j) + scl_box*s3 - scl*u(7:9,j); 
-	    end_pos = x(1:3,j) + scl_box*s3;
-	    arrow(start_pos,end_pos,'tipangle',30,'Color',[1,0,0],'Width',2,'Length',5)
+	#     start_pos = x(1:3,j) + scl_box*s3 - scl*u(7:9,j); 
+	#     end_pos = x(1:3,j) + scl_box*s3;
+	#     arrow(start_pos,end_pos,'tipangle',30,'Color',[1,0,0],'Width',2,'Length',5)
 
-	    start_pos = x(1:3,j) + scl_box*s4 - scl*u(10:12,j); 
-	    end_pos = x(1:3,j) + scl_box*s4;
-	    arrow(start_pos,end_pos,'tipangle',30,'Color',[1,0,1],'Width',2,'Length',5)
+	#     start_pos = x(1:3,j) + scl_box*s4 - scl*u(10:12,j); 
+	#     end_pos = x(1:3,j) + scl_box*s4;
+	#     arrow(start_pos,end_pos,'tipangle',30,'Color',[1,0,1],'Width',2,'Length',5)
 	    
-	    cube_origin = x(1:3,j)' - scl_box*$(eX.a_blk)*ones(1,3);
-	    plotcube(scl_box*2*$(eX.a_blk)*ones(1,3),cube_origin,0.3,[1,0.8,0])
-	end
-	xlabel('\$x\$');
-	ylabel('\$y\$');
-	zlabel('\$z\$');
-	view(24,31)
+	#     cube_origin = x(1:3,j)' - scl_box*$(eX.a_blk)*ones(1,3);
+	#     plotcube(scl_box*2*$(eX.a_blk)*ones(1,3),cube_origin,0.3,[1,0.8,0])
+	# end
+	# xlabel('\$x\$');
+	# ylabel('\$y\$');
+	# zlabel('\$z\$');
+	# view(24,31)
 
-	axis equal
-	axis('manual')
-	"""
+	# axis equal
+	# axis('manual')
+	# """
 end
 
 function trajectory3D(x,u)
