@@ -39,4 +39,8 @@ function astro = astro_constants()
     astro.nrho_init     = [1.024839452754877  -0.001469610071726  -0.176331432119678  -0.002193318212420  -0.107740373416905  -0.013148385667988]' ...
                           + [astro.muMoon-1;zeros(5,1)];
 
+    % Scaling matrices for rendezvous
+    astro.sclx = diag([1e-5*ones(1,3),1e-4*ones(1,3)]);
+    astro.invsclx = inv(astro.sclx);
+
 end
