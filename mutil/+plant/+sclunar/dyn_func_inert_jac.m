@@ -1,3 +1,4 @@
+% Compute Jacobian of the spacraft dynamics in N body problem in the J2000 MEME inertial frame (centered at Moon)
 function [jac_t_dxdt,jac_x_dxdt] = dyn_func_inert_jac(t,x,astro)
 %dyn_func_inert_jac
 %    [JAC_T_DXDT,JAC_X_DXDT] = dyn_func_inert_jac(t,x,astro)

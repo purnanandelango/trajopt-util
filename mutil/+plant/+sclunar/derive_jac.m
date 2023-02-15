@@ -1,3 +1,5 @@
+% Derive Jacobian of spacecraft dynamics via MATLAB Symbolic Toolbox
+
 clearvars
 close all
 clc
