@@ -16,7 +16,7 @@ cspice_furnsh( { 'naif0011.tls.pc',...
 t0 = 0;
 x0 = plant.sclunar.rot_to_inert(astro.nrho_init_rot,t0,astro);
 
-delta_t = 5 *astro.min2nd; % Sampling time
+delta_t = 15 *astro.min2nd; % Sampling time
  
 tend   = 12  *astro.hr2nd; % Final time
 ts_end = 6   *astro.hr2nd; % Safety horizon
@@ -36,15 +36,22 @@ ymax = astro.invS*[0.1*ones(3,1); 0.1*ones(3,1)]; % [km,km/s] -> [nd]
 xbar = plant.sclunar.propagate_dyn_func_inert(x0,tp,astro,1,0);
 
 BRS = cell(Ns,Np);
+A = zeros(36,Np-1);
 
 for j = 1:Np
+    if j<Np
+        A(:,j) = reshape( disc.stm_ltv(tp(j),tp(j+1),xbar(:,j),@(t,x) plant.sclunar.dyn_func_inert_SRP(t,x,astro), ...
+                                                               @(t,x) plant.sclunar.dyn_func_inert_SRP_jac(t,x,astro,true)) , [36,1]);
+    end
     BRS{1,j} = H;
     for k = 2:Ns
         STM = disc.stm_ltv(tp(j),tp(j) + ts(k),xbar(:,j),@(t,x) plant.sclunar.dyn_func_inert_SRP(t,x,astro), ...
-                                                         @(t,x) plant.sclunar.dyn_func_inert_SRP_jac(t,x,astro));
+                                                         @(t,x) plant.sclunar.dyn_func_inert_SRP_jac(t,x,astro,true));
         BRS{k,j} = H*STM;
     end
 end
+
+B = [zeros(3,3);eye(3)];
 
 
 % Clear ephemeris data from memory
