@@ -1,5 +1,5 @@
 % Compute Jacobian of the spacraft dynamics in N body problem in the J2000 MEME inertial frame (centered at Moon) with SRP considered
-function [jac_x_dxdt,jac_t_dxdt] = dyn_func_inert_SRP_jac(t,x,astro)
+function [jac_x_dxdt,jac_t_dxdt] = dyn_func_inert_SRP_jac(t,x,astro,varargin)
 %dyn_func_inert_SRP_jac
 %    [JAC_X_DXDT,JAC_T_DXDT] = dyn_func_inert_SRP_jac(t,x,astro)
 
@@ -153,5 +153,11 @@ t115 = t67+t91+t94+t100;
 t116 = t68+t92+t95+t101;
 t117 = t69+t93+t96+t102;
 jac_x_dxdt = reshape([0.0,0.0,0.0,t60+t76+t82+GMM.*t8.*t52.*3.0-GME.*t73.*(t2.*-2.0+t3+t4+t9+t10+t24+t25+t29+rE_1.*rsc_1.*4.0)-GMS.*t75.*(t5.*-2.0+t6+t7+t9+t10+t27+t28+t29+rS_1.*rsc_1.*4.0),t115,t116,0.0,0.0,0.0,t115,t60+t76+t83+GMM.*t9.*t52.*3.0-GME.*t73.*(t2-t3.*2.0+t4+t8+t10+t23+t25+t30+rE_2.*rsc_2.*4.0)-GMS.*t75.*(t5-t6.*2.0+t7+t8+t10+t26+t28+t30+rS_2.*rsc_2.*4.0),t117,0.0,0.0,0.0,t116,t117,t60+t76+t84+GMM.*t10.*t52.*3.0-GME.*t73.*(t2+t3-t4.*2.0+t8+t9+t23+t24+t31+rE_3.*rsc_3.*4.0)-GMS.*t75.*(t5+t6-t7.*2.0+t8+t9+t26+t27+t31+rS_3.*rsc_3.*4.0),1.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0],[6,6]);
+
+if nargin == 4
+    if varargin{1} % Should the state Jacobian be scaled?
+        jac_x_dxdt = astro.invSrdv*jac_x_dxdt*astro.Srdv;
+    end
+end
 
 end

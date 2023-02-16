@@ -51,4 +51,17 @@ function astro = astro_constants()
     astro.S = astro.Snd*astro.Srdv; % [rdv] -> [km,m/s]
     astro.invS = inv(astro.S);      % [km,m/s] -> [rdv]
 
+    % Unit conversions
+    astro.sec2nd = 1/astro.t_star;   % [s] -> [nd]
+    astro.nd2sec = 1/astro.sec2nd;   % [nd] -> [s]    
+
+    astro.min2nd = 60/astro.t_star;  % [min] -> [nd]
+    astro.nd2min = 1/astro.min2nd;   % [nd] -> [min]        
+
+    astro.hr2nd = 3600/astro.t_star; % [hr] -> [nd]
+    astro.nd2hr = 1/astro.hr2nd;     % [nd] -> [hr]
+
+    astro.day2nd = 24*3600/astro.t_star; % [day] -> [nd]
+    astro.nd2day = 1/astro.day2nd;       % [nd] -> [day]
+
 end
