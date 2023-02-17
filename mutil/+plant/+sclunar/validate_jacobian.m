@@ -8,9 +8,7 @@ close all
 astro = plant.sclunar.astro_constants();
 
 % Load ephemeris data
-cspice_furnsh( { 'naif0011.tls.pc',...
-                 'de421.bsp',...
-                 'pck00010.tpc' } );
+plant.sclunar.ephem('load');
 
 t0 = 0;
 x0 = plant.sclunar.rot_to_inert(astro.nrho_init_rot,t0,astro);
@@ -63,4 +61,4 @@ end
 norm(STM_v1(:)-STM_v2(:))
 
 % Clear ephemeris data from memory
-cspice_kclear
+plant.sclunar.ephem('unload');

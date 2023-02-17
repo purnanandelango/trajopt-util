@@ -35,19 +35,24 @@ function astro = astro_constants()
     astro.ndGM_Earth    = astro.GM_Earth*(astro.t_star^2)/(astro.l_star^3);
     astro.ndGM_Moon     = astro.GM_Moon*(astro.t_star^2)/(astro.l_star^3);
 
-    % Non-dimensional initial condition of a high-fidelity NRHO baseline in Moon-centered rotating frame
+    % Non-dimensional initial condition of a high-fidelity NRHO baseline in Moon-centered frame
+    % Rotating frame
     astro.nrho_init_rot = [1.024839452754877  -0.001469610071726  -0.176331432119678  -0.002193318212420  -0.107740373416905  -0.013148385667988]' ...
-                          + [astro.muMoon-1;zeros(5,1)];
+                          + [astro.muMoon-1;zeros(5,1)];                                
+    % Inertial frame
+    plant.sclunar.ephem('load');
+    astro.nrho_init_inert = plant.sclunar.rot_to_inert(astro.nrho_init_rot,0,astro);
+    plant.sclunar.ephem('unload');
 
-    % Scaling matrices for rendezvous used after EM CR3BP non-dimensionalization
-    astro.Srdv = diag([1e-5*ones(1,3),1e-4*ones(1,3)]); % [rdv] -> [nd] 
+    % Scaling matrices for converting between rendezvous scale and EM CR3BP non-dimensionalization
+    astro.Srdv = diag([1e-5*ones(1,3),5e-4*ones(1,3)]); % [rdv] -> [nd] 
     astro.invSrdv = inv(astro.Srdv);                    % [nd] -> [rdv]
 
-    % Scaling matrices used for EM CR3BP non-dimensionalization
+    % Scaling matrices for converting between EM CR3BP non-dimensionalization and dimensional quantities
     astro.Snd = diag([astro.l_star*ones(1,3),astro.v_star*1000*ones(1,3)]); % [nd] -> [km,m/s]
     astro.invSnd = inv(astro.Snd);                                          % [km,m/s] -> [nd]
 
-    % Scaling matrices to convert between rendezvous scale and dimensional quantities
+    % Scaling matrices for converting between rendezvous scale and dimensional quantities
     astro.S = astro.Snd*astro.Srdv; % [rdv] -> [km,m/s]
     astro.invS = inv(astro.S);      % [km,m/s] -> [rdv]
 

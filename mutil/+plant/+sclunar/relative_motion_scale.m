@@ -7,15 +7,13 @@ close all
 astro = plant.sclunar.astro_constants();
 
 % Load ephemeris data
-cspice_furnsh( { 'naif0011.tls.pc',...
-                 'de421.bsp',...
-                 'pck00010.tpc' } );
+plant.sclunar.ephem('load');
 
-hour_final = 10; % [hr]
+hour_final = 72; % [hr]
 tspan = (0:300:hour_final*3600)/astro.t_star; % Grid with 5 min intervals
 
 % Convert nd initial condition from rotational to inertial frame
-x_init_inert = plant.sclunar.rot_to_inert(astro.nrho_init_rot,tspan(1),astro);
+x_init_inert = astro.nrho_init_inert;
 
 [xbar,tbar] = plant.sclunar.propagate_dyn_func_inert(x_init_inert,tspan,astro,1,0);
 
@@ -26,8 +24,8 @@ N = numel(tbar);
 Abar = cell(1,N);
 inf_norm(N) = 0;
 for j = 1:N
-    [~,Abar{j}] = plant.sclunar.dyn_func_inert_SRP_jac(tbar(j),xbar(:,j),astro);
-    inf_norm(j) = max(max(abs(astro.invSrdv*Abar{j}*astro.Srdv)));
+    Abar{j} = plant.sclunar.dyn_func_inert_SRP_jac(tbar(j),xbar(:,j),astro,true);
+    inf_norm(j) = max(max(abs(Abar{j})));
 end
 
 plot(tbar*astro.t_star/3600,inf_norm); xlabel("hr"); title("RDV scale")
@@ -37,7 +35,7 @@ rel_speed = 5; % [m/s]
 unit_vec1 = randn(3,1); unit_vec1 = unit_vec1/norm(unit_vec1);
 unit_vec2 = randn(3,1); unit_vec2 = unit_vec2/norm(unit_vec2);
 y0 = astro.invS*[rel_dist*unit_vec1;rel_speed*unit_vec2];
-[~,y] = ode113(@(t,y) plant.sclunar.ltv_SRP(t,y,ppbar,astro),tspan,y0);
+[~,y] = ode113(@(t,y) plant.sclunar.ltv_SRP(t,y,ppbar,astro,true),tspan,y0);
 
 % y = (astro.S*(y'))';
 
@@ -56,4 +54,4 @@ axis equal
 
 
 % Clear ephemeris data from memory
-cspice_kclear
+plant.sclunar.ephem('unload');

@@ -10,9 +10,7 @@ addpath('../../../../../OpNav/util_mex');
 astro = plant.sclunar.astro_constants();
 
 % Load ephemeris data
-cspice_furnsh( { 'naif0011.tls.pc',...
-                 'de421.bsp',...
-                 'pck00010.tpc' } );
+plant.sclunar.ephem('load');
 
 tspan = [0,28*24*3600/astro.t_star];
 
@@ -37,7 +35,7 @@ IC = astro.nrho_init' + [1-astro.muMoon,zeros(1,5)];
 fprintf("MEX propagator time: %5.3d ms\n",1000*toc);
 
 % Clear ephemeris data from memory
-cspice_kclear
+plant.sclunar.ephem('unload');
 
 plot3(x2(1,:),x2(2,:),x2(3,:),'-b');
 hold on
