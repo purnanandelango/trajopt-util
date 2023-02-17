@@ -8,11 +8,13 @@ prb = problem_data(0);
 % Load constants
 astro = plant.sclunar.astro_constants;
 
+plant.sclunar.ephem('load');
+
 % Initialize reference solution
 ybar = prb.yguess;
 ubar = prb.uguess;
 
-for itr = 1:20
+for itr = 1:15
 
     % Compute signed-distance and projection to BRS
     sdist = zeros(prb.Ns,prb.Np);
@@ -75,13 +77,27 @@ for itr = 1:20
     fprintf("   OBS = %.2e\n\n",min(min(sdist)));
 
 end
+
+%% Compute failure trajectories
+yfail_dim = zeros(6,prb.Ns,prb.Np);
+for j = 1:prb.Np
+    xfail = plant.sclunar.propagate_dyn_func_inert(prb.xbar(:,j) + astro.Srdv*ybar(:,j),prb.ts,astro,1,0);
+    yfail_dim(:,:,j) = astro.Snd*(xfail - prb.xbar(:,j:j+prb.Ns-1));
+end
+
+plant.sclunar.ephem('unload');
+
+
 %%
 figure
-subplot(1,2,1)
+% subplot(1,2,1)
 ybar_dim = astro.S*ybar;
 prb.AvoidSet_dim.plot('alpha',0.5)
 hold on
 plot3(ybar_dim(1,:),ybar_dim(2,:),ybar_dim(3,:),'o-b');
+for j = 1:prb.Np
+    plot3(yfail_dim(1,:,j),yfail_dim(2,:,j),yfail_dim(3,:,j),'.-','Color',[0.2,0.2,0.3,0.5]);
+end
 xlabel("$x$ [km]");
 ylabel("$y$ [km]");
 zlabel("$z$ [km]");
@@ -91,7 +107,8 @@ ax.PlotBoxAspectRatio = [1,1,1];
 ax.DataAspectRatio = [1,1,1];
 view(0,90);
 
-subplot(1,2,2)
+figure
+% subplot(1,2,2)
 ubar_dim = 100*astro.S(4:6,4:6)*prb.uscl*ubar; % [cm/s]
 norm_ubar_dim(prb.Np-1) = 0;
 for j = 1:prb.Np-1
