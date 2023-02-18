@@ -1,0 +1,4 @@
+ - non-uniform grid
+ - free-final time formulation
+ - control constraints (conditional)
+ - comparison with other methods
