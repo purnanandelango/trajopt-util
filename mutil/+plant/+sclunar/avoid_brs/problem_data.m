@@ -9,7 +9,7 @@ plant.sclunar.ephem('load');
 t0 = 0;
 x0 = astro.nrho_init_inert;
  
-ts_end = 6   *astro.hr2nd; % Safety horizon
+ts_end = 12   *astro.hr2nd; % Safety horizon
 tp_end = 12   *astro.hr2nd; % Planning horizon
 
 % delta_t = 15 *astro.min2nd; % Sampling time
@@ -22,7 +22,8 @@ Ns = 30;
 Np = 30;
 ts = grid.generate_grid(0,ts_end,Ns,'sine-minus');
 tp = grid.generate_grid(t0,tp_end,Np,'sine-plus');
-fprintf("Min. delta t (planning): %.2e min\nMin. delta t (safety):   %.2e min\n",min(diff(tp))*astro.nd2min,min(diff(ts))*astro.nd2min);
+fprintf("Min. delta t (planning): %.2e min\nMax. delta t (planning): %.2e min\nMin. delta t (safety):   %.2e min\nMax. delta t (safety):   %.2e min\n",...
+    min(diff(tp))*astro.nd2min,max(diff(tp))*astro.nd2min,min(diff(ts))*astro.nd2min,max(diff(ts))*astro.nd2min);
 
 xbar = zeros(6,Ns,Np);
 xbar(:,1,:) = plant.sclunar.propagate_dyn_func_inert(x0,tp,astro,1,0);
@@ -55,7 +56,7 @@ for j = 1:Np-1
     yguess(:,j+1) = A(:,:,j)*yguess(:,j);
 end
 yguess = yguess + astro.invS*[10*ones(3,1);0.5*ones(3,1)];
-yend = astro.invS*[0;1.4*box_size;0;0;0;0];
+yend = astro.invS*[1.4*box_size;0;0;0;0;0];
 
 % Clear ephemeris data from memory
 plant.sclunar.ephem('unload');
@@ -90,18 +91,18 @@ prb.sdist_min = 0.01;
 
 prb.solver = 'osqp';
 prb.cost_term = @(z) z'*z;      % Quadratic
-prb.stg_penalty = 1;
+prb.stg_penalty = 0.5;
 prb.tr_penalty = 1;
-prb.obs_penalty = 3;
+prb.obs_penalty = 2;
 
 % prb.solver = 'gurobi';
 % prb.cost_term = @(z) norm(z);   % Second-order cone
-% prb.stg_penalty = 1;
+% prb.stg_penalty = 0.5;
 % prb.tr_penalty = 1;
-% prb.obs_penalty = 5;
+% prb.obs_penalty = 3;
 
-prb.maxiter = 10;
+prb.maxiter = 25;
 
-save('problem_data','prb');
+prb.result_name = 'result_qp_004';
 
 end

@@ -8,14 +8,20 @@ prb = problem_data(0);
 % Load constants
 astro = plant.sclunar.astro_constants;
 
+% RHS of linear inequality representing avoid set polytope
 box_rhs = prb.h;
 
+% Load ephemeris data
 plant.sclunar.ephem('load');
 
 % Initialize reference solution
 ybar = prb.yguess;
 ubar = prb.uguess;
 
+% Container for SCP iterate information
+scp_history = zeros(3,prb.maxiter);
+
+% PTR-SCP
 for itr = 1:prb.maxiter
 
     % Compute signed-distance and projection to BRS
@@ -24,11 +30,12 @@ for itr = 1:prb.maxiter
     for j = 1:prb.Np
         ybarj = ybar(:,j);
         BRSj = prb.BRS(:,j);
-        parfor k = 1:prb.Ns
+        for k = 1:prb.Ns
             [projvec{k,j},sdist(k,j)] = geom.sign_dist_polyhed(ybarj,BRSj{k},box_rhs);
         end
     end
     
+    % SCP Subproblem
     yalmip clear
     
     y = sdpvar(6,prb.Np);
@@ -36,6 +43,7 @@ for itr = 1:prb.maxiter
     objval = 0.0;
     cnstr = [];
 
+    % Stage cost, state-input constraints, dynamics, boundary conditions
     objval_stg = 0.0;    
     for j = 1:prb.Np-1
         objval_stg = objval_stg + prb.stg_penalty*prb.cost_term(u(:,j));
@@ -44,11 +52,12 @@ for itr = 1:prb.maxiter
                  y(:,j+1) == prb.A(:,:,j)*y(:,j) + prb.B*u(:,j)]; 
     end
     cnstr = [cnstr;
-             y(:,1) == prb.y0;
-             y(1:3,prb.Np) == prb.yend(1:3)];
+             y(:,1) == prb.y0;                  % Initial position and velocity
+             y(1:3,prb.Np) == prb.yend(1:3)];   % Final position
 
     objval = objval + objval_stg;
 
+    % Trust region penalty
     objval_tr = 0.0;
     for j = 1:prb.Np-1
         objval_tr = objval_tr + prb.tr_penalty*prb.cost_term(y(:,j)-ybar(:,j)) ...
@@ -58,6 +67,7 @@ for itr = 1:prb.maxiter
     
     objval = objval + objval_tr;
 
+    % Obstacle avoidance penalty
     slk = sdpvar(prb.Ns,prb.Np);
     dL = sdpvar(prb.Ns,prb.Np);
     objval_obs = 0.0;
@@ -72,14 +82,28 @@ for itr = 1:prb.maxiter
     end
     objval = objval + objval_obs;
     
+    % Call optimizer
     optimize(cnstr,objval,sdpsettings('solver',prb.solver,'verbose',0));
-    
+
+    % Update reference solution
     ubar = value(u);
     ybar = value(y);
 
-    fprintf("%2d TR  = %.2e\n",itr,value(objval_tr));
-    fprintf("   OBS = %.2e\n",min(min(sdist)));
-    fprintf("   STG = %.2e\n\n",value(objval_stg));
+    % Trajectory cost
+    costval = 0.0;
+    for j = 1:prb.Np-1
+        costval = costval + norm(100*astro.S(4:6,4:6)*prb.uscl*ubar(:,j));
+    end
+    trval = value(objval_tr)/prb.tr_penalty;
+    minsdist = min(min(sdist));
+
+    % Print current SCP iterate information
+    fprintf("%2d TR  = %.2e\n",itr,trval);
+    fprintf("   OBS = %.2e\n",minsdist);
+    fprintf("   STG = %.2e cm/s\n\n",costval);
+
+    % Record SCP iterate information
+    scp_history(:,itr) = [trval;minsdist;costval];
 
 end
 
@@ -90,7 +114,10 @@ for j = 1:prb.Np
     yfail_dim(:,:,j) = astro.Snd*(xfail - prb.xbar(:,:,j));
 end
 
+% Unload ephemeris data
 plant.sclunar.ephem('unload');
+
+save(prb.result_name,'prb','scp_history','ybar','ubar');
 
 
 %%
