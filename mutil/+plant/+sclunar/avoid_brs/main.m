@@ -8,20 +8,24 @@ prb = problem_data(0);
 % Load constants
 astro = plant.sclunar.astro_constants;
 
+box_rhs = prb.h;
+
 plant.sclunar.ephem('load');
 
 % Initialize reference solution
 ybar = prb.yguess;
 ubar = prb.uguess;
 
-for itr = 1:15
+for itr = 1:prb.maxiter
 
     % Compute signed-distance and projection to BRS
     sdist = zeros(prb.Ns,prb.Np);
     projvec = cell(prb.Ns,prb.Np);
     for j = 1:prb.Np
-        for k = 1:prb.Ns
-            [projvec{k,j},sdist(k,j)] = geom.sign_dist_polyhed(ybar(:,j),prb.BRS{k,j},prb.h);
+        ybarj = ybar(:,j);
+        BRSj = prb.BRS(:,j);
+        parfor k = 1:prb.Ns
+            [projvec{k,j},sdist(k,j)] = geom.sign_dist_polyhed(ybarj,BRSj{k},box_rhs);
         end
     end
     
@@ -68,21 +72,22 @@ for itr = 1:15
     end
     objval = objval + objval_obs;
     
-    optimize(cnstr,objval,sdpsettings('solver','osqp','verbose',0));
+    optimize(cnstr,objval,sdpsettings('solver',prb.solver,'verbose',0));
     
     ubar = value(u);
     ybar = value(y);
 
     fprintf("%2d TR  = %.2e\n",itr,value(objval_tr));
-    fprintf("   OBS = %.2e\n\n",min(min(sdist)));
+    fprintf("   OBS = %.2e\n",min(min(sdist)));
+    fprintf("   STG = %.2e\n\n",value(objval_stg));
 
 end
 
 %% Compute failure trajectories
 yfail_dim = zeros(6,prb.Ns,prb.Np);
 for j = 1:prb.Np
-    xfail = plant.sclunar.propagate_dyn_func_inert(prb.xbar(:,j) + astro.Srdv*ybar(:,j),prb.ts,astro,1,0);
-    yfail_dim(:,:,j) = astro.Snd*(xfail - prb.xbar(:,j:j+prb.Ns-1));
+    xfail = plant.sclunar.propagate_dyn_func_inert(prb.xbar(:,1,j) + astro.Srdv*ybar(:,j),prb.tp(j) + prb.ts,astro,1,0);
+    yfail_dim(:,:,j) = astro.Snd*(xfail - prb.xbar(:,:,j));
 end
 
 plant.sclunar.ephem('unload');

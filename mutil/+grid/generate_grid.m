@@ -4,11 +4,11 @@ function x = generate_grid(xmin,xmax,N,flg)
         case 'uniform'
             x = linspace(xmin,xmax,N);
         case 'cosine'
-            x = cosinespace(xmin,xmax,N);
+            x = grid.cosinespace(xmin,xmax,N);
         case 'sine-plus'
-            x = sinespace(xmin,xmax,N,'plus');
+            x = grid.sinespace(xmin,xmax,N,'plus');
         case 'sine-minus'
-            x = sinespace(xmin,xmax,N,'minus');
+            x = grid.sinespace(xmin,xmax,N,'minus');
         otherwise
             error("Incorrect flag for generating grid.");
     end
