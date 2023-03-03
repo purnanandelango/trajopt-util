@@ -6,22 +6,22 @@ astro = plant.sclunar.astro_constants();
 plant.sclunar.ephem('load');
 
 % Non-dimensional initial condition in inertial frame
-t0 = 0;
-x0 = astro.nrho_init_inert;
+t0 = 5 *astro.day2nd;
+x0 = astro.nrho_init_inert_plus5days;
  
-ts_end = 12   *astro.hr2nd; % Safety horizon
-tp_end = 12   *astro.hr2nd; % Planning horizon
+ts_end = 0.25   *astro.hr2nd;         % Safety horizon
+tp_end =  3   *astro.day2nd + t0;   % Planning horizon
 
-% delta_t = 15 *astro.min2nd; % Sampling time
-% Ns = 1 + round((ts_end-0)/delta_t);
-% Np = 1 + round((tp_end-t0)/delta_t);
-% ts = linspace(0,ts_end,Ns);
-% tp = linspace(t0,tp_end,Np);
+delta_t = 0.5 *astro.min2nd; % Sampling time
+Ns = 1 + round((ts_end-0)/delta_t);
+Np = 1 + round((tp_end-t0)/delta_t);
+ts = linspace(0,ts_end,Ns);
+tp = linspace(t0,tp_end,Np);
 
-Ns = 30;
-Np = 30;
-ts = grid.generate_grid(0,ts_end,Ns,'sine-minus');
-tp = grid.generate_grid(t0,tp_end,Np,'sine-plus');
+% Ns = 30;
+% Np = 30;
+% ts = grid.generate_grid(0,ts_end,Ns,'sine-minus');
+% tp = grid.generate_grid(t0,tp_end,Np,'sine-plus');
 fprintf("Min. delta t (planning): %.2e min\nMax. delta t (planning): %.2e min\nMin. delta t (safety):   %.2e min\nMax. delta t (safety):   %.2e min\n",...
     min(diff(tp))*astro.nd2min,max(diff(tp))*astro.nd2min,min(diff(ts))*astro.nd2min,max(diff(ts))*astro.nd2min);
 

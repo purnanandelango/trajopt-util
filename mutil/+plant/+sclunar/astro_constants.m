@@ -35,7 +35,7 @@ function astro = astro_constants()
     astro.ndGM_Earth    = astro.GM_Earth*(astro.t_star^2)/(astro.l_star^3);
     astro.ndGM_Moon     = astro.GM_Moon*(astro.t_star^2)/(astro.l_star^3);
 
-    % Non-dimensional initial condition of a high-fidelity NRHO baseline in Moon-centered frame
+    % Non-dimensional apolune initial condition of a high-fidelity NRHO baseline in Moon-centered frame
     % Rotating frame
     astro.nrho_init_rot = [1.024839452754877  -0.001469610071726  -0.176331432119678  -0.002193318212420  -0.107740373416905  -0.013148385667988]' ...
                           + [astro.muMoon-1;zeros(5,1)];                                
@@ -43,6 +43,9 @@ function astro = astro_constants()
     plant.sclunar.ephem('load');
     astro.nrho_init_inert = plant.sclunar.rot_to_inert(astro.nrho_init_rot,0,astro);
     plant.sclunar.ephem('unload');
+
+    % Non-dimensional state 5 days after nrho_init_inert
+    astro.nrho_init_inert_plus5days = [0.001156543462525   0.034947676595609  -0.145207680119472  -0.065745821265549   0.098518804961560  -0.160600339123497];
 
     % Scaling matrices for converting between rendezvous scale and EM CR3BP non-dimensionalization
     astro.Srdv = diag([1e-5*ones(1,3),5e-4*ones(1,3)]); % [rdv] -> [nd] 
