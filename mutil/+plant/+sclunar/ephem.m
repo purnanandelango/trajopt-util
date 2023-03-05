@@ -3,8 +3,8 @@ function [] = ephem(flg)
     switch flg
         case 'load'
             
-            % path2data = "/Users/purnanandelango/Documents/trajopt-util/mutil/data/";
-            path2data = "C:\Users\elango\Documents\FreeMotion_v2\EPHEM\ephemeris_data\";
+            path2data = "/Users/purnanandelango/Documents/trajopt-util/mutil/data/";
+            % path2data = "C:\Users\elango\Documents\FreeMotion_v2\EPHEM\ephemeris_data\";
 
             cspice_furnsh( cellfun(@char,{ path2data + "naif0011.tls.pc",...
                                            path2data + "de421.bsp",...
