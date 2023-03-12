@@ -11,6 +11,6 @@ function [H_grid,g_grid] = assemble_ltv_back_reach_polytopes(H_final,g_final,A_g
     H_grid = cell(Ns+1,Np+1);
     g_grid = cell(Ns+1,Np+1);
     for t = 1:Np+1
-        [H_grid(:,t),g_grid(:,t)] = plant.construct_back_reach_polytopes(H_final,g_final,A_grid(t:t+Ns-1));
+        [H_grid(:,t),g_grid(:,t)] = plant.util.construct_back_reach_polytopes(H_final,g_final,A_grid(t:t+Ns-1));
     end
 end
