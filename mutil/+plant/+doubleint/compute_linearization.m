@@ -6,7 +6,7 @@ function [A,B,S,w] = compute_linearization(x,u,s,n,coeff_drag,g)
     v = reshape(x(n+1:2*n),[n,1]);
 
     A = [zeros(n) s*eye(n);
-         zeros(n) - s*coeff_drag*(norm(v)*eye(n) + v*v'/norm(v))];
+         zeros(n) -s*coeff_drag*(norm(v)*eye(n) + v*v'/norm(v))];
 
     B = [zeros(n);
          s*eye(n)];
