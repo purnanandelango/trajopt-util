@@ -11,24 +11,24 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
     T   = sdpvar(n,K,ntarg);
     s   = sdpvar(K,ntarg);
 
-    cnstr = [];
-    cost_fun = 0;
-
     for j = 1:ntarg
-
-        idx_r = (j-1)*(2*n)+1:(j-1)*(2*n)+n;
-        idx_v = (j-1)*(2*n)+n+1:j*(2*n);
-        idx_T = (j-1)*(n+1)+1:(j-1)*(n+1)+n;
-        idx_s = j*(n+1);
 
         % Define unscaled states and control inputs
         for k = 1:K
-            r(:,k,j)   = prb.Sx(idx_r,idx_r)          *x(idx_r,k)      + prb.cx(idx_r);
-            v(:,k,j)   = prb.Sx(idx_v,idx_v)          *x(idx_v,k)      + prb.cx(idx_v);
+            r(:,k,j)   = prb.Sx(prb.idx_r(:,j),prb.idx_r(:,j)) *x(prb.idx_r(:,j),k)  + prb.cx(prb.idx_r(:,j));
+            v(:,k,j)   = prb.Sx(prb.idx_v(:,j),prb.idx_v(:,j)) *x(prb.idx_v(:,j),k)  + prb.cx(prb.idx_v(:,j));
     
-            T(:,k,j)   = prb.Su(idx_T,idx_T)          *u(idx_T,k)      + prb.cu(idx_T);        
-            s(k,j)     = prb.Su(idx_s,idx_s)          *u(idx_s,k)      + prb.cu(idx_s);  
+            T(:,k,j)   = prb.Su(prb.idx_T(:,j),prb.idx_T(:,j)) *u(prb.idx_T(:,j),k)      + prb.cu(prb.idx_T(:,j));        
+            s(k,j)     = prb.Su(prb.idx_s(j),prb.idx_s(j)) *u(prb.idx_s(j),k)      + prb.cu(prb.idx_s(j));  
         end
+
+    end
+
+    cnstr = [];
+    cost_fun = 0;
+    defer_time = 0;
+
+    for j = 1:ntarg
 
         % Boundary conditions
         cnstr = [cnstr;
@@ -37,6 +37,7 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
                  r(:,K,j)   == prb.rK(:,j);
                  v(:,K,j)   == prb.vK(:,j)];       
 
+        % Constraints
         for k = 1:K    
             
             cnstr = [cnstr;
@@ -45,10 +46,11 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
                      -prb.rmax <= r(:,k,j) <= prb.rmax;                                                             % Bounds on position 
                      prb.smin <= s(k,j) <= prb.smax];                                                               % Lower and upper bounds on dilation factor
             
-            cost_fun = cost_fun + prb.cost_factor*(norm(u(idx_T,k)) + 2*u(idx_s,k));
+            cost_fun = cost_fun + prb.cost_factor*prb.cost_term(u(prb.idx_T(:,j),k));
 
             % Deferrability
             if j > 1 && k <= prb.Kstr
+                defer_time = defer_time + u(prb.idx_s(j),k);
                 cnstr = [cnstr;
                          r(:,k,1) == r(:,k,j);
                          v(:,k,1) == v(:,k,j)];
@@ -57,6 +59,8 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
         end        
     
     end  
+
+    cost_fun = cost_fun - 0.2*prb.cost_factor*defer_time; 
 
     % Compute time of maneuver and constrain time step
     for j = 1:ntarg

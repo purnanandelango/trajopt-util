@@ -4,25 +4,37 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.ntarg = 3;                                  % Number of targets
     
-    prb.n = 3;                                      % Dimension of double integrator
+    prb.n = 2;                                      % Dimension of double integrator
 
     prb.nx = 2*prb.n*prb.ntarg;
     prb.nu = (prb.n+1)*prb.ntarg;
     prb.np = 0;
+
+    prb.idx_r = zeros(prb.n,prb.ntarg);
+    prb.idx_v = zeros(prb.n,prb.ntarg);
+    prb.idx_T = zeros(prb.n,prb.ntarg);
+    prb.idx_s = zeros(1,prb.ntarg);
+    for j = 1:prb.ntarg
+        prb.idx_r(:,j) = (j-1)*(2*prb.n)+1:(j-1)*(2*prb.n)+prb.n;
+        prb.idx_v(:,j) = (j-1)*(2*prb.n)+prb.n+1:j*(2*prb.n);
+        prb.idx_T(:,j) = (j-1)*(prb.n+1)+1:(j-1)*(prb.n+1)+prb.n;
+        prb.idx_s(j)   = j*(prb.n+1);    
+    end    
     
     prb.tau = grid.generate_grid(0,1,K,'uniform');  % Generate grid in [0,1]
 
     prb.dtau = diff(prb.tau);
     
-    prb.h = (1/5)*min(prb.dtau);                    % Step size for integration that computes FOH matrices
+    prb.h = (1/10)*min(prb.dtau);                    % Step size for integration that computes FOH matrices
     prb.Kfine = 1+round(2/min(prb.dtau));           % Size of grid on which SCP solution is simulated
     
     % Deferrability index
-    prb.Kstr = 5;
+    prb.Kstr = round(K/3);
+    [~,prb.Kstrfine] = min(abs(prb.tau(prb.Kstr)-grid.generate_grid(0,1,prb.Kfine,'uniform')));
 
     % System parameters
 
-    prb.g = [0;0;0];                                % External acceleration vector
+    prb.g = [0;0];                                  % External acceleration vector
         
     prb.c_d = 0.3;                                  % Drag coefficient
     
@@ -33,37 +45,36 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.umax = 8;
 
     prb.smin = 0.01;
-    prb.smax = 10;
-    prb.dtmin = 0.01;
-    prb.dtmax = 2;
+    prb.smax = 50;
+    prb.dtmin = 0.5;
+    prb.dtmax = 6;
     prb.ToFmax = 20;
     
     % Boundary conditions
 
-    prb.r1 = [0;0;0];           
-    prb.v1 = [0.1;0;0];
+    prb.r1 = [0;0];           
+    prb.v1 = [0;0];
     
-    prb.rK = [5  10   0;
-              5   0  10;
-              2   1   0];
+    prb.rK = [5  10  1;
+              5   0  0];
+              
     prb.vK = -0.1*[1  0  0;
-                   0  1  0;
-                   0  0  1];
+                   0  1  0];
 
     assert(length(prb.r1) == prb.n && length(prb.v1) == prb.n,"Specified initial position or velocity does match the system dimension.");
     assert(size(prb.rK,2) >= prb.ntarg && size(prb.vK,2) >= prb.ntarg,"Insufficient targets states specified.");
 
     prb.x1 = repmat([prb.r1;prb.v1],[prb.ntarg,1]);
     prb.xK = reshape([prb.rK;prb.vK],[prb.nx,1]);    
-    prb.u1 = repmat([ones(3,1);20/K],[prb.ntarg,1]);
-    prb.uK = repmat([ones(3,1);20/K],[prb.ntarg,1]);
+    prb.u1 = repmat([ones(prb.n,1);20/K],[prb.ntarg,1]);
+    prb.uK = repmat([ones(prb.n,1);20/K],[prb.ntarg,1]);
 
     % Scaling parameters
-    xmin = repmat([-0.5*prb.rmax*ones(3,1); -0.5*prb.vmax*ones(3,1)],[prb.ntarg,1]);
-    xmax = repmat([ 0.5*prb.rmax*ones(3,1);  0.5*prb.vmax*ones(3,1)],[prb.ntarg,1]);
+    xmin = repmat([-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1)],[prb.ntarg,1]);
+    xmax = repmat([ 0.5*prb.rmax*ones(prb.n,1);  0.5*prb.vmax*ones(prb.n,1)],[prb.ntarg,1]);
     
-    umin = repmat([zeros(3,1); 1],[prb.ntarg,1]);
-    umax = repmat([prb.umax*ones(3,1); 5],[prb.ntarg,1]);
+    umin = repmat([zeros(prb.n,1); 1],[prb.ntarg,1]);
+    umax = repmat([prb.umax*ones(prb.n,1); 5],[prb.ntarg,1]);
 
     [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax]},[-1,1]);
 
@@ -78,11 +89,14 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','ecos','verbose',false);
+    prb.solver_settings = sdpsettings('solver','gurobi','verbose',0);
     
     prb.tr_norm = 2;
+    prb.cost_term = @(z) norm(z);
+
     % prb.tr_norm = inf;
     % prb.tr_norm = 'quad';
+    % prb.cost_term = @(z) z'*z;
     
     prb.wvc = wvc;
     prb.wtr = wtr;
@@ -116,11 +130,11 @@ function [A,B,w] = evaluate_linearization(x,u,ntarg,n,c_d,g)
     u = reshape(u,[n+1,ntarg]);
     A = [];
     B = [];
-    w = [];
+    w = zeros(2*n*ntarg,1);
     for j = 1:ntarg
         [Aj,Bj,Sj,wj] = plant.doubleint.compute_linearization(x(:,j),u(1:n,j),u(n+1,j),n,c_d,g);
         A = blkdiag(A,Aj);
         B = blkdiag(B,[Bj,Sj]);
-        w = [w;wj];
+        w((j-1)*(2*n)+1:j*2*n) = wj;
     end
 end

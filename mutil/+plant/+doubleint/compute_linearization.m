@@ -5,8 +5,13 @@ function [A,B,S,w] = compute_linearization(x,u,s,n,coeff_drag,g)
 
     v = reshape(x(n+1:2*n),[n,1]);
 
+    if norm(v) > 1e-7
+        term_v = v*v'/norm(v);
+    else
+        term_v = 0;
+    end
     A = [zeros(n) s*eye(n);
-         zeros(n) -s*coeff_drag*(norm(v)*eye(n) + v*v'/norm(v))];
+         zeros(n) -s*coeff_drag*(norm(v)*eye(n) + term_v)];
 
     B = [zeros(n);
          s*eye(n)];

@@ -12,11 +12,11 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         foh_type = "v3";
     end
     
-    fprintf("+------------------------------------------------------------------------------------+\n");
-    fprintf("|                          ..:: Penalized Trust Region ::..                          |\n");
-    fprintf("+-------+------------+-----------+-----------+---------+---------+---------+---------+\n");
-    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |  Cost   |   ToF   |\n");
-    fprintf("+-------+------------+-----------+-----------+---------+---------+---------+---------+\n");
+    fprintf("+-------------------------------------------------------------------------------------+\n");
+    fprintf("|                          ..:: Penalized Trust Region ::..                           |\n");
+    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+\n");
+    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   |\n");
+    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+\n");
     
     % Varying trust-region and virtual control weights
     % wvc_vec = linspace(prb.wvc,prb.wvc/5,prb.scp_iters);
@@ -115,7 +115,7 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings); 
         % assert(ismember(yalmip_out.problem,[0,3]),"Subproblem is unsolved.\nSolver message: %s",yalmiperror(yalmip_out.problem));
         if ~ismember(yalmip_out.problem,[0,3])
-            fprintf("+------------------------------------------------------------------------------------+\n");
+            fprintf("+-------------------------------------------------------------------------------------+\n");
             fprintf('Subproblem is unsolved. Returning the previous iterate.\n'); 
             break
         end
@@ -156,11 +156,11 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         ToF = prb.time_of_maneuver(xbar,ubar,pbar);
         
         % Console output
-        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %7.1e | %7.1e |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF)
+        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %8.1e | %7.1e |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF)
         
         if vc_term < prb.epsvc && tr_term < prb.epstr
             converged = true;
-            fprintf("+------------------------------------------------------------------------------------+\n");            
+            fprintf("+-------------------------------------------------------------------------------------+\n");            
             fprintf('Converged!\n') 
             break
         end
