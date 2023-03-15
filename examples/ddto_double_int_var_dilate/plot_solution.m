@@ -30,7 +30,7 @@ for j = 1:prb.K
     nrm_T1bar(j) = norm(ubar(1:3,j));
     nrm_v1bar(j) = norm(xbar(4:6,j));
     nrm_T2bar(j) = norm(ubar(5:7,j));
-    nrm_v2bar(j) = norm(xbar(7:9,j));
+    nrm_v2bar(j) = norm(xbar(10:12,j));
 end
 
 subplot(2,2,2)
@@ -44,13 +44,14 @@ title('Velocity')
 subplot(2,2,3)
 plot(tvec1,nrm_T1,'-b');
 hold on 
-plot(tvec,nrm_T2,'--r');
+plot(tvec2,nrm_T2,'--r');
 plot(tvecbar1,nrm_T1bar,'ob');
 plot(tvecbar2,nrm_T2bar,'or');
 title('Thrust');
 
 subplot(2,2,4)
-plot(tau,tvec,'-k');
+plot(tau,tvec1,'-r');
 hold on
+plot(tau,tvec2,'--m');
 plot(tau,s1,'--g');
-plot(tau,s2,'--m');
+plot(tau,s2,'--b');

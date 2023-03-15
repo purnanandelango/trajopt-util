@@ -1,97 +1,81 @@
 function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
                                                     ~,~)
-% r1    = x(1:3)
-% v1    = x(4:6)
-% r2    = x(7:9)
-% v2    = x(10:12)
-% T1    = u(1:3)
-% s1    = u(4)
-% T1    = u(5:7)
-% s1    = u(8)
 
     K = prb.K;
+    n = prb.n;
+    ntarg = prb.ntarg;
 
-    % Unscaled variables
-    r1   = sdpvar(3,K);
-    v1   = sdpvar(3,K);
-    r2   = sdpvar(3,K);
-    v2   = sdpvar(3,K);    
-    T1   = sdpvar(3,K);
-    s1   = sdpvar(1,K);
-    T2   = sdpvar(3,K);
-    s2   = sdpvar(1,K);    
+    % Containers for unscaled variables
+    r   = sdpvar(n,K,ntarg);
+    v   = sdpvar(n,K,ntarg);
+    T   = sdpvar(n,K,ntarg);
+    s   = sdpvar(K,ntarg);
 
-    for k = 1:K
-        r1(:,k)   = prb.Sx(1:3,1:3)          *x(1:3,k)      + prb.cx(1:3);
-        v1(:,k)   = prb.Sx(4:6,4:6)          *x(4:6,k)      + prb.cx(4:6);
-        r2(:,k)   = prb.Sx(7:9,7:9)          *x(7:9,k)      + prb.cx(7:9);
-        v2(:,k)   = prb.Sx(10:12,10:12)      *x(10:12,k)    + prb.cx(10:12);        
-
-        T1(:,k)   = prb.Su(1:3,1:3)      *u(1:3,k)   + prb.cu(1:3);        
-        s1(k)     = prb.Su(4,4)          *u(4,k)     + prb.cu(4);  
-        T2(:,k)   = prb.Su(5:7,5:7)      *u(5:7,k)   + prb.cu(5:7);        
-        s2(k)     = prb.Su(8,8)          *u(8,k)     + prb.cu(8);          
-    end
-    
-    % Boundary conditions
-    cnstr = [r1(:,1)   == prb.r1;
-             v1(:,1)   == prb.v1;
-             r2(:,1)   == prb.r1;
-             v2(:,1)   == prb.v1;
-             r1(:,K)   == prb.rK(:,1);
-             v1(:,K)   == prb.vK(:,1);
-             r2(:,K)   == prb.rK(:,2);
-             v2(:,K)   == prb.vK(:,2)];
-
+    cnstr = [];
     cost_fun = 0;
 
-    for k = 1:K    
-        
-        cnstr = [cnstr;
-                 norm(T1(:,k)) <= prb.umax;                                                                     % Thrust magnitude upper bound
-                 norm(v1(:,k)) <= prb.vmax;                                                                     % Velocity magnitude upper bound
-                 norm(r1(:,k),'inf') <= prb.rmax; 
-                 prb.smin <= s1(k) <= prb.smax;                                                                 % Lower and upper bounds on dilation factor
-                 norm(T2(:,k)) <= prb.umax;                                                                     % Thrust magnitude upper bound
-                 norm(v2(:,k)) <= prb.vmax;                                                                     % Velocity magnitude upper bound
-                 norm(r2(:,k),'inf') <= prb.rmax; 
-                 prb.smin <= s2(k) <= prb.smax];
+    for j = 1:ntarg
 
-        if k <= prb.taustr
-            cnstr = [cnstr;
-                     r1(:,k) == r2(:,k);
-                     v1(:,k) == v2(:,k)];
+        idx_r = (j-1)*(2*n)+1:(j-1)*(2*n)+n;
+        idx_v = (j-1)*(2*n)+n+1:j*(2*n);
+        idx_T = (j-1)*(n+1)+1:(j-1)*(n+1)+n;
+        idx_s = j*(n+1);
+
+        % Define unscaled states and control inputs
+        for k = 1:K
+            r(:,k,j)   = prb.Sx(idx_r,idx_r)          *x(idx_r,k)      + prb.cx(idx_r);
+            v(:,k,j)   = prb.Sx(idx_v,idx_v)          *x(idx_v,k)      + prb.cx(idx_v);
+    
+            T(:,k,j)   = prb.Su(idx_T,idx_T)          *u(idx_T,k)      + prb.cu(idx_T);        
+            s(k,j)     = prb.Su(idx_s,idx_s)          *u(idx_s,k)      + prb.cu(idx_s);  
         end
+
+        % Boundary conditions
+        cnstr = [cnstr;
+                 r(:,1,j)   == prb.r1;
+                 v(:,1,j)   == prb.v1;
+                 r(:,K,j)   == prb.rK(:,j);
+                 v(:,K,j)   == prb.vK(:,j)];       
+
+        for k = 1:K    
+            
+            cnstr = [cnstr;
+                     norm(T(:,k,j)) <= prb.umax;                                                                    % Thrust magnitude upper bound
+                     norm(v(:,k,j)) <= prb.vmax;                                                                    % Velocity magnitude upper bound
+                     -prb.rmax <= r(:,k,j) <= prb.rmax;                                                             % Bounds on position 
+                     prb.smin <= s(k,j) <= prb.smax];                                                               % Lower and upper bounds on dilation factor
+            
+            cost_fun = cost_fun + prb.cost_factor*(norm(u(idx_T,k)) + 2*u(idx_s,k));
+
+            % Deferrability
+            if j > 1 && k <= prb.Kstr
+                cnstr = [cnstr;
+                         r(:,k,1) == r(:,k,j);
+                         v(:,k,1) == v(:,k,j)];
+            end            
         
-        cost_fun = cost_fun + prb.cost_factor*(norm(u([1:3,5:7],k)) + 2*(u(4,k)+u(8,k)));
+        end        
     
     end  
 
-    % cost_fun = cost_fun + prb.cost_factor*norm(u(:));
-
     % Compute time of maneuver and constrain time step
-    ToF1 = 0;
-    ToF2 = 0;
-    switch prb.disc
-        case "ZOH"
-            for k = 1:prb.K-1
-                ToF1 = ToF1 + prb.dtau(k)*s1(k);
-                ToF2 = ToF2 + prb.dtau(k)*s2(k);
-                cnstr = [cnstr; prb.dtmin <= prb.dtau(k)*s1(k) <= prb.dtmax;
-                                prb.dtmin <= prb.dtau(k)*s2(k) <= prb.dtmax]; 
-            end
-        case "FOH"
-            for k = 1:prb.K-1
-                ToF1 = ToF1 + 0.5*prb.dtau(k)*(s1(k+1)+s1(k));
-                ToF2 = ToF2 + 0.5*prb.dtau(k)*(s2(k+1)+s2(k));
-                cnstr = [cnstr; prb.dtmin <= 0.5*prb.dtau(k)*(s1(k+1)+s1(k)) <= prb.dtmax;
-                                prb.dtmin <= 0.5*prb.dtau(k)*(s2(k+1)+s2(k)) <= prb.dtmax];
-            end
-    end    
-
-    % Time of maneuver upper bound
-    cnstr = [cnstr; ToF1 <= prb.ToFmax;
-                    ToF2 <= prb.ToFmax];
+    for j = 1:ntarg
+        ToFj = 0;
+        switch prb.disc
+            case "ZOH"
+                for k = 1:prb.K-1
+                    ToFj = ToFj + prb.dtau(k)*s(k,j);
+                    cnstr = [cnstr; prb.dtmin <= prb.dtau(k)*s(k,j) <= prb.dtmax]; 
+                end
+            case "FOH"
+                for k = 1:prb.K-1
+                    ToFj = ToFj + 0.5*prb.dtau(k)*(s(k+1,j)+s(k,j));
+                    cnstr = [cnstr; prb.dtmin <= 0.5*prb.dtau(k)*(s(k+1,j)+s(k,j)) <= prb.dtmax];
+                end
+        end    
+        % Time of maneuver upper bound
+        cnstr = [cnstr; ToFj <= prb.ToFmax];                        
+    end
 
     vc_cnstr = 0;
 
