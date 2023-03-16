@@ -26,7 +26,6 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
 
     cnstr = [];
     cost_fun = 0;
-    % defer_time = 0;
     stage_cost = sdpvar(K,ntarg);
 
     for j = 1:ntarg
@@ -47,7 +46,7 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
                      -prb.rmax <= r(:,k,j) <= prb.rmax;                                                             % Bounds on position 
                      prb.smin <= s(k,j) <= prb.smax];                                                               % Lower and upper bounds on dilation factor
             
-            % cost_fun = cost_fun + prb.cost_factor*prb.cost_term(u(prb.idx_T(:,j),k));
+            cost_fun = cost_fun + prb.cost_factor*prb.cost_term(u(prb.idx_T(:,j),k));
             stage_cost(k,j) = prb.cost_term(u(prb.idx_T(:,j),k));
 
             % Deferrability
@@ -59,10 +58,12 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
         
         end    
 
+        % Suboptimality constraint
         cnstr = [cnstr; sum(stage_cost(:,j)) <= prb.cost_bound(j)];
     
     end  
 
+    % Time elapsed in each interval
     dt = sdpvar(K-1,ntarg);
 
     % Compute time of maneuver and constrain time step
@@ -84,8 +85,8 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
     end
     defer_time = sum(dt(1:prb.Kstr,1));
 
-    % cost_fun = cost_fun - prb.cost_factor*defer_time;     
-    cost_fun = cost_fun + prb.cost_factor*(sum(dt(:,2))-sum(dt(:,3)));     
+    cost_fun = cost_fun - prb.cost_factor*defer_time;     
+    % cost_fun = cost_fun + prb.cost_factor*sum(dt(:,2));     
 
     vc_cnstr = 0;
 
