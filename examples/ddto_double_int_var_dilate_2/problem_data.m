@@ -2,7 +2,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     prb.K = K;
 
-    prb.ntarg = 3;                                  % Number of targets
+    prb.ntarg = 2;                                  % Number of targets
     
     prb.n = 2;                                      % Dimension of double integrator
 
@@ -36,7 +36,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.g = [0;0];                                  % External acceleration vector
         
-    prb.c_d = 0.3;                                  % Drag coefficient
+    prb.c_d = 0.01;                                  % Drag coefficient
     
     % Bounds
 
@@ -45,29 +45,31 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.umax = 8;
 
     prb.smin = 0.01;
-    prb.smax = 50;
-    prb.dtmin = 0.5;
+    prb.smax = 10;
+    prb.dtmin = 0.2;
     prb.dtmax = 6;
     prb.ToFmax = 20;
+
+    prb.cost_bound = [20,50];
     
     % Boundary conditions
 
     prb.r1 = [0;0];           
     prb.v1 = [0;0];
     
-    prb.rK = [5  10  1;
-              5   0  0];
+    prb.rK = [2   5;
+              7   0];
               
-    prb.vK = -0.1*[1  0  0;
-                   0  1  0];
+    prb.vK = 0.1*[1  0;
+                0  1];
 
     assert(length(prb.r1) == prb.n && length(prb.v1) == prb.n,"Specified initial position or velocity does match the system dimension.");
     assert(size(prb.rK,2) >= prb.ntarg && size(prb.vK,2) >= prb.ntarg,"Insufficient targets states specified.");
 
     prb.x1 = repmat([prb.r1;prb.v1],[prb.ntarg,1]);
     prb.xK = reshape([prb.rK;prb.vK],[prb.nx,1]);    
-    prb.u1 = repmat([ones(prb.n,1);20/K],[prb.ntarg,1]);
-    prb.uK = repmat([ones(prb.n,1);20/K],[prb.ntarg,1]);
+    prb.u1 = repmat([ones(prb.n,1);15/K],[prb.ntarg,1]);
+    prb.uK = repmat([ones(prb.n,1);15/K],[prb.ntarg,1]);
 
     % Scaling parameters
     xmin = repmat([-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1)],[prb.ntarg,1]);
@@ -89,7 +91,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','gurobi','verbose',0);
+    prb.solver_settings = sdpsettings('solver','ecos','verbose',0);
     
     prb.tr_norm = 2;
     prb.cost_term = @(z) norm(z);

@@ -26,7 +26,8 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
 
     cnstr = [];
     cost_fun = 0;
-    defer_time = 0;
+    % defer_time = 0;
+    stage_cost = sdpvar(K,ntarg);
 
     for j = 1:ntarg
 
@@ -46,40 +47,45 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
                      -prb.rmax <= r(:,k,j) <= prb.rmax;                                                             % Bounds on position 
                      prb.smin <= s(k,j) <= prb.smax];                                                               % Lower and upper bounds on dilation factor
             
-            cost_fun = cost_fun + prb.cost_factor*prb.cost_term(u(prb.idx_T(:,j),k));
+            % cost_fun = cost_fun + prb.cost_factor*prb.cost_term(u(prb.idx_T(:,j),k));
+            stage_cost(k,j) = prb.cost_term(u(prb.idx_T(:,j),k));
 
             % Deferrability
             if j > 1 && k <= prb.Kstr
-                defer_time = defer_time + u(prb.idx_s(j),k);
                 cnstr = [cnstr;
                          r(:,k,1) == r(:,k,j);
                          v(:,k,1) == v(:,k,j)];
             end            
         
-        end        
+        end    
+
+        cnstr = [cnstr; sum(stage_cost(:,j)) <= prb.cost_bound(j)];
     
     end  
 
-    cost_fun = cost_fun - 0.2*prb.cost_factor*defer_time; 
+    dt = sdpvar(K-1,ntarg);
 
     % Compute time of maneuver and constrain time step
     for j = 1:ntarg
-        ToFj = 0;
         switch prb.disc
             case "ZOH"
                 for k = 1:prb.K-1
-                    ToFj = ToFj + prb.dtau(k)*s(k,j);
+                    dt(k,j) = prb.dtau(k)*s(k,j);
                     cnstr = [cnstr; prb.dtmin <= prb.dtau(k)*s(k,j) <= prb.dtmax]; 
                 end
             case "FOH"
                 for k = 1:prb.K-1
-                    ToFj = ToFj + 0.5*prb.dtau(k)*(s(k+1,j)+s(k,j));
+                    dt(k,j) = 0.5*prb.dtau(k)*(s(k+1,j)+s(k,j));
                     cnstr = [cnstr; prb.dtmin <= 0.5*prb.dtau(k)*(s(k+1,j)+s(k,j)) <= prb.dtmax];
                 end
-        end    
+        end        
         % Time of maneuver upper bound
-        cnstr = [cnstr; ToFj <= prb.ToFmax];                        
+        cnstr = [cnstr; sum(dt(:,j)) <= prb.ToFmax];                        
     end
+    defer_time = sum(dt(1:prb.Kstr,1));
+
+    % cost_fun = cost_fun - prb.cost_factor*defer_time;     
+    cost_fun = cost_fun + prb.cost_factor*(sum(dt(:,2))-sum(dt(:,3)));     
 
     vc_cnstr = 0;
 
