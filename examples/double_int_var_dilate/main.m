@@ -1,7 +1,7 @@
 clearvars
 clc
 
-prb = problem_data(20,10,5e1,1,0.3);
+prb = problem_data(7,10,5e1,10,0.3,0.7);
 
 load('recent_solution','x','u','tau');
 [xbar,ubar] = misc.create_initialization(prb,1,x,u,tau);
@@ -16,10 +16,10 @@ tvecbar = prb.time_grid(prb.tau,xbar,ubar);
 tvec = prb.time_grid(tau,x,u);
 
 % Simulate on phyiscal time grid
-[~,x2,~] = disc.simulate_dyn(xbar(:,1),{tvec,[u(1:3,:);ones(1,prb.Kfine)]},@(t,x,u) prb.dyn_func(t,x,u),[0,tvec(end)],prb.Kfine,prb.disc);
+[~,x2,~] = disc.simulate_dyn(xbar(:,1),{tvec,[u(1:prb.n,:);ones(1,prb.Kfine)]},@(t,x,u) prb.dyn_func(t,x,u),[0,tvec(end)],prb.Kfine,prb.disc);
 
-r = x(1:3,:);
-v = x(4:6,:);
+r = x(1:prb.n,:);
+v = x(prb.n+1:2*prb.n,:);
 
 fprintf('\nFinal position error: %.3f\nFinal velocity error: %.3f\n',norm(r(:,end)-prb.rK),norm(v(:,end)-prb.vK));
 

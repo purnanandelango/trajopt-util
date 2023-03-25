@@ -1,9 +1,9 @@
-function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
+function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     
     prb.K = K;
 
     % Dimension of double integrator
-    prb.n = 3;
+    prb.n = 2;
 
     prb.nx = 2*prb.n;
     prb.nu = prb.n+1;
@@ -13,34 +13,41 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.dtau = diff(prb.tau);
     
-    prb.h = (1/5)*min(prb.dtau);            % Step size for integration that computes FOH matrices
-    prb.Kfine = 1+round(2/min(prb.dtau));    % Size of grid on which SCP solution is simulated
+    prb.h = (1/100)*min(prb.dtau);            % Step size for integration that computes FOH matrices
+    prb.Kfine = 1+100*round(1/min(prb.dtau));    % Size of grid on which SCP solution is simulated
     
     % System parameters
 
-    prb.g = [zeros(1,prb.n-1),-1];
+    prb.g = [zeros(prb.n-1,1);-1];
     
-    prb.c_d = 0.01; 
+    prb.c_d = 0.1; 
     
     % Bounds
 
-    prb.rmax = 10;
+    prb.rmax = 40;
     prb.vmax = 5;
-    prb.umax = 8;
+    prb.umax = 5;
 
     prb.smin = 0.01;
     prb.smax = 10;
     prb.dtmin = 0.01;
-    prb.dtmax = 2;
+    prb.dtmax = 3;
     prb.ToFmax = 20;
-    
+
+    % Obstacle avoidance
+    prb.nobs = 2;
+
+    prb.robs = [-5 -10;
+                 5  20];
+    prb.aobs = [6 5];
+
     % Boundary conditions
 
-    prb.r1 = [0;0;0];
-    prb.v1 = [0;0;0];
+    prb.r1 = [0;0];
+    prb.v1 = [0;0];
     
-    prb.rK = [5;5;5];
-    prb.vK = -0.1*[1;0;0];
+    prb.rK = [-15;28];
+    prb.vK = -0.1*[1;0];
 
     assert(length(prb.r1) == prb.n && length(prb.v1) == prb.n,"Specified initial position or velocity does match the system dimension.");
 
@@ -76,6 +83,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     % prb.tr_norm = 'quad';
     
     prb.wvc = wvc;
+    prb.wvb = wvb;
     prb.wtr = wtr;
     prb.cost_factor = cost_factor;
     
