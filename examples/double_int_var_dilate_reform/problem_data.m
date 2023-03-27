@@ -5,7 +5,10 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     % Dimension of double integrator
     prb.n = 2;
 
-    prb.nx = 2*prb.n;
+    % Number of integrated constraints
+    prb.m = 2;
+
+    prb.nx = 2*prb.n + prb.m;
     prb.nu = prb.n+1;
     prb.np = 0;
     
@@ -45,14 +48,16 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
 
     prb.r1 = [0;0];
     prb.v1 = [0;0];
+    prb.bet1 = zeros(prb.m,1);
     
     prb.rK = [-15;28];
     prb.vK = -0.1*[1;0];
+    prb.betK = zeros(prb.m,1);    
 
     assert(length(prb.r1) == prb.n && length(prb.v1) == prb.n,"Specified initial position or velocity does match the system dimension.");
 
-    prb.x1 = [prb.r1;prb.v1];
-    prb.xK = [prb.rK;prb.vK];    
+    prb.x1 = [prb.r1;prb.v1;prb.bet1];
+    prb.xK = [prb.rK;prb.vK;prb.betK];    
     prb.u1 = [ones(prb.n,1);20/K];
     prb.uK = [ones(prb.n,1);20/K];
 
@@ -100,7 +105,24 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
 
 end
 
-function [A,B,w] = evaluate_linearization(x,u,n,coeff_drag,g)
-    [A,B,S,w] = plant.doubleint.compute_linearization(x,u(1:n),u(n+1),n,coeff_drag,g);
-    B = [B,S];
+function dz = evaluate_dyn_func(z,u,n,c_d,g,gam,robs_scl,aobs_scl)
+    x = z(1:2*n);
+    dx = plant.doubleint.dyn_func(x,u(1:n),u(n+1),n,c_d,g);
+    dz = [dx;
+          misc.softplus( -norm(x(1:n)-robs_scl(:,1)) + aobs_scl(1) ,gam);
+          misc.softplus( -norm(x(1:n)-robs_scl(:,2)) + aobs_scl(2) ,gam)];
+end
+
+function [A,B,w] = evaluate_linearization(z,u,n,c_d,g,gam,robs_scl,aobs_scl)
+    x = z(1:2*n);
+    [dfdx,dfdu,dfds] = plant.doubleint.compute_linearization(x,u(1:n),u(n+1),n,c_d,g);
+    dfdu = [dfdu,dfds];
+
+    A = [dfdx zeros(2*n,2);
+         misc.softplus_derv( -norm(x(1:n)-robs_scl(:,1)) + aobs_scl(1) ,gam)*( -(x(1:n)-robs_scl(:,1))'/norm(x(1:n)-robs_scl(:,1)) ) zeros(2*n,n+2);
+         misc.softplus_derv( -norm(x(1:n)-robs_scl(:,2)) + aobs_scl(2) ,gam)*( -(x(1:n)-robs_scl(:,2))'/norm(x(1:n)-robs_scl(:,2)) ) zeros(2*n,n+2)];
+    B = [dfdu;
+        zeros(2,n+1)];
+    h = evaluate_dyn_func(z,u,n,c_d,g,gam,robs_scl,aobs_scl);
+    w = h - A*z - B*u;
 end
