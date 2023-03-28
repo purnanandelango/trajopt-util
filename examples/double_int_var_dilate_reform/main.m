@@ -1,7 +1,7 @@
 clearvars
 clc
 
-prb = problem_data(10,10,5e2,1,0.5);
+prb = problem_data(10,20,5e1,0.01,0.001);
 
 load('recent_solution','x','u','tau');
 [xbar,ubar] = misc.create_initialization(prb,2,x,u,tau);

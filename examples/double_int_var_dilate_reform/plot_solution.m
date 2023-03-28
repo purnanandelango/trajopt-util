@@ -61,6 +61,7 @@ plot(tvecbar,prb.umax*ones(1,prb.K),'-r','LineWidth',1);
 title('Thrust');
 xlabel('$t$');
 xlim([0,tvec(end)])
+ylim([0,prb.umax])
 
 subplot(2,2,4)
 hold on

@@ -38,8 +38,11 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.dtmax = 3;
     prb.ToFmax = 20;
 
-    prb.betmin = 0;
-    prb.betmax = 0.1;
+    prb.betmin = zeros(prb.m,1);
+    prb.betmax = [0.1;
+                  0.1;
+                  0.01;
+                  0.01];
 
     % Obstacle avoidance
     prb.nobs = 2;
@@ -66,8 +69,8 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.uK = [ones(prb.n,1);20/K];
 
     % Scaling parameters
-    xmin = [-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1); prb.betmin*ones(prb.m,1)];
-    xmax = [ 0.5*prb.rmax*ones(prb.n,1);  0.5*prb.vmax*ones(prb.n,1); prb.betmax*ones(prb.m,1)];
+    xmin = [-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1); prb.betmin];
+    xmax = [ 0.5*prb.rmax*ones(prb.n,1);  0.5*prb.vmax*ones(prb.n,1); prb.betmax];
     
     umin = [zeros(prb.n,1); 1];
     umax = [prb.umax*ones(prb.n,1); 5];
@@ -102,7 +105,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
+    prb.solver_settings = sdpsettings('solver','mosek','verbose',false);
     
     prb.tr_norm = 2;
     % prb.tr_norm = inf;
