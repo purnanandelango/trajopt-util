@@ -6,13 +6,13 @@ load recent_solution
 figure
 subplot(2,2,1)
 if prb.n == 3
-    plot3(r(1,:),r(2,:),r(3,:),'-r');
+    plot3(r(1,:),r(2,:),r(3,:),'-b');
     hold on 
-    plot3(xbar(1,:),xbar(2,:),xbar(3,:),'or');
+    plot3(xbar(1,:),xbar(2,:),xbar(3,:),'ob');
 else
-    plot(r(1,:),r(2,:),'-r');
+    plot(r(1,:),r(2,:),'-b');
     hold on 
-    plot(xbar(1,:),xbar(2,:),'or');    
+    plot(xbar(1,:),xbar(2,:),'ob');    
 end 
 title('Position');
 
@@ -47,15 +47,20 @@ subplot(2,2,2)
 plot(tvec,nrm_v,'-m');
 hold on 
 plot(tvecbar,nrm_vbar,'om');
-title('Velocity')
+plot(tvecbar,prb.vmax*ones(1,prb.K),'-r','LineWidth',1);
+title('Speed')
 xlabel('$t$');
+xlim([0,tvec(end)])
 
 subplot(2,2,3)
 plot(tvec,nrm_T,'-b');
 hold on 
 plot(tvecbar,nrm_Tbar,'ob');
+plot(tvecbar,prb.umin*ones(1,prb.K),'-r','LineWidth',1);
+plot(tvecbar,prb.umax*ones(1,prb.K),'-r','LineWidth',1);
 title('Thrust');
 xlabel('$t$');
+xlim([0,tvec(end)])
 
 subplot(2,2,4)
 hold on
@@ -63,5 +68,8 @@ plot(prb.tau,tvecbar,'ok');
 p1 = plot(tau,tvec,'-k');
 plot(prb.tau,ubar(prb.n+1,:),'og');
 p2 = plot(tau,u(prb.n+1,:),'-g');
+plot(prb.tau,prb.smin*ones(1,prb.K),'-r','LineWidth',3);
+plot(prb.tau,prb.smax*ones(1,prb.K),'-r','LineWidth',1);
 legend([p1,p2],{'$t(\tau)$','$s(\tau)$'})
 xlabel('$\tau$');
+title('Time \& Dilation')

@@ -1,9 +1,10 @@
-function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
-                                                    xbar,~)
-% r    = x(1:3)
-% v    = x(4:6)
-% T    = u(1:3)
-% s    = u(4)
+function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(z,u,prb,...
+                                                    ~,~)
+% r    = z(1:n)
+% v    = z(n+1:2*n)
+% bet  = z(2*n+1:2*n+m)
+% T    = u(1:n)
+% s    = u(n+1)
 
     K = prb.K;
 
@@ -13,22 +14,21 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
     T   = sdpvar(prb.n,K);
     s   = sdpvar(1,K);
 
-    % Obstacle avoidance buffer
-    nu_obs = sdpvar(prb.nobs,K);
-
     for k = 1:K
-        r(:,k)   = prb.Sx(1:prb.n,1:prb.n)                  *x(1:prb.n,k)          + prb.cx(1:prb.n);
-        v(:,k)   = prb.Sx(prb.n+1:2*prb.n,prb.n+1:2*prb.n)  *x(prb.n+1:2*prb.n,k)  + prb.cx(prb.n+1:2*prb.n);
+        r(:,k)   = prb.Sx(1:prb.n,1:prb.n)                  *z(1:prb.n,k)          + prb.cx(1:prb.n);
+        v(:,k)   = prb.Sx(prb.n+1:2*prb.n,prb.n+1:2*prb.n)  *z(prb.n+1:2*prb.n,k)  + prb.cx(prb.n+1:2*prb.n);
 
         T(:,k)   = prb.Su(1:prb.n,1:prb.n)                  *u(1:prb.n,k)          + prb.cu(1:prb.n);        
-        s(k)     = prb.Su(prb.n+1,prb.n+1)                  *u(prb.n+1,k)          + prb.cu(prb.n+1);        
+        s(k)     = prb.Su(prb.n+1,prb.n+1)                  *u(prb.n+1,k)          + prb.cu(prb.n+1); 
     end
+    bet = z(2*prb.n+1:2*prb.n+prb.m,:);
     
     % Boundary conditions
     cnstr = [r(:,1)   == prb.r1;
              v(:,1)   == prb.v1;
              r(:,K)   == prb.rK;
-             v(:,K)   == prb.vK];
+             v(:,K)   == prb.vK;
+             bet(:,1) == zeros(prb.m,1)];
 
     cost_fun = 0;
 
@@ -36,23 +36,20 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
         
         cnstr = [cnstr;
                  norm(T(:,k)) <= prb.umax;                                                                     % Thrust magnitude upper bound
-                 norm(v(:,k)) <= prb.vmax;                                                                     % Velocity magnitude upper bound
+                 % norm(v(:,k)) <= prb.vmax;                                                                     % Velocity magnitude upper bound
                  norm(r(:,k),'inf') <= prb.rmax; 
                  prb.smin <= s(k) <= prb.smax];                                                                % Lower and upper bounds on dilation factor
         
         % cost_fun = cost_fun + prb.cost_factor*(norm(u(1:prb.n,k)) + 2*(u(prb.n+1,k)));
 
-        for j = 1:prb.nobs
+        if k < K
             cnstr = [cnstr;
-                     norm(xbar(1:prb.n,k)-prb.robs(:,j)) - prb.aobs(j) + dot(xbar(1:prb.n,k)-prb.robs(:,j),r(:,k)-xbar(1:prb.n,k))/norm(xbar(1:prb.n,k)-prb.robs(:,j)) + nu_obs(j,k) >= 0;
-                     nu_obs(j,k) >= 0];
+                     bet(:,k+1) == bet(:,k)];
         end
 
     end  
 
-    vc_cnstr = sum(nu_obs(:));    
-
-    cost_fun = cost_fun + prb.cost_factor*norm(u(:)) + prb.wvb*vc_cnstr;
+    cost_fun = cost_fun + prb.cost_factor*norm(u(:));
 
     % Compute time of maneuver and constrain time step
     ToF = 0;
@@ -71,5 +68,7 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
 
     % Time of maneuver upper bound
     cnstr = [cnstr;ToF <= prb.ToFmax];
+
+    vc_cnstr = 0;
 
 end

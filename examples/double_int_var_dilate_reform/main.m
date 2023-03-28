@@ -1,10 +1,10 @@
 clearvars
 clc
 
-prb = problem_data(7,10,5e1,10,0.3,0.7);
+prb = problem_data(10,10,5e2,1,0.5);
 
 load('recent_solution','x','u','tau');
-[xbar,ubar] = misc.create_initialization(prb,1,x,u,tau);
+[xbar,ubar] = misc.create_initialization(prb,2,x,u,tau);
 
 [xbar,ubar] = scp.run_ptr_noparam(xbar,ubar,prb,@sys_cnstr_cost);
 tvecbar = prb.time_grid(prb.tau,xbar,ubar);
@@ -26,4 +26,4 @@ fprintf('\nFinal position error: %.3f\nFinal velocity error: %.3f\n',norm(r(:,en
 save('recent_solution','r','v','tvec','tau','u','x','x2','prb',...
                        'xbar','ubar','tvecbar');
 
-plot_solution;
+% plot_solution;

@@ -1,4 +1,4 @@
-function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
+function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     prb.K = K;
 
@@ -6,7 +6,7 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.n = 2;
 
     % Number of integrated constraints
-    prb.m = 2;
+    prb.m = 4;
 
     prb.nx = 2*prb.n + prb.m;
     prb.nu = prb.n+1;
@@ -16,8 +16,8 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
 
     prb.dtau = diff(prb.tau);
     
-    prb.h = (1/100)*min(prb.dtau);            % Step size for integration that computes FOH matrices
-    prb.Kfine = 1+100*round(1/min(prb.dtau));    % Size of grid on which SCP solution is simulated
+    prb.h = (1/20)*min(prb.dtau);            % Step size for integration that computes FOH matrices
+    prb.Kfine = 1+20*round(1/min(prb.dtau));    % Size of grid on which SCP solution is simulated
     
     % System parameters
 
@@ -30,19 +30,23 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.rmax = 40;
     prb.vmax = 5;
     prb.umax = 5;
+    prb.umin = 2;
 
     prb.smin = 0.01;
     prb.smax = 10;
-    prb.dtmin = 0.01;
+    prb.dtmin = 0.1;
     prb.dtmax = 3;
     prb.ToFmax = 20;
+
+    prb.betmin = 0;
+    prb.betmax = 0.1;
 
     % Obstacle avoidance
     prb.nobs = 2;
 
     prb.robs = [-5 -10;
-                 5  20];
-    prb.aobs = [4 5];
+                 6  20];
+    prb.aobs = [6 7];
 
     % Boundary conditions
 
@@ -62,18 +66,35 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.uK = [ones(prb.n,1);20/K];
 
     % Scaling parameters
-    xmin = [-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1)];
-    xmax = [ 0.5*prb.rmax*ones(prb.n,1);  0.5*prb.vmax*ones(prb.n,1)];
+    xmin = [-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1); prb.betmin*ones(prb.m,1)];
+    xmax = [ 0.5*prb.rmax*ones(prb.n,1);  0.5*prb.vmax*ones(prb.n,1); prb.betmax*ones(prb.m,1)];
     
     umin = [zeros(prb.n,1); 1];
     umax = [prb.umax*ones(prb.n,1); 5];
 
-    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax]},[-1,1]);
+    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax]},[0,1]);
 
     prb.Sx = Sz{1}; prb.invSx = inv(Sz{1});
     prb.Su = Sz{2}; prb.invSu = inv(Sz{2});
     prb.cx = cz{1};
     prb.cu = cz{2};
+
+    % Scaled constraint parameters
+
+    prb.cnstr_fun       = @(x,u) [-norm(x(1:prb.n)-prb.robs(:,1)) + prb.aobs(1);
+                                  -norm(x(1:prb.n)-prb.robs(:,2)) + prb.aobs(2);
+                                   norm(x(prb.n+1:2*prb.n))^2 - prb.vmax^2;
+                                  -norm(u(1:prb.n)) + prb.umin];
+
+    prb.cnstr_fun_jac_x = @(x,u) [-(x(1:prb.n)-prb.robs(:,1))'/norm(x(1:prb.n)-prb.robs(:,1)) zeros(1,prb.n);
+                                  -(x(1:prb.n)-prb.robs(:,2))'/norm(x(1:prb.n)-prb.robs(:,2)) zeros(1,prb.n);
+                                  zeros(1,prb.n) 2*x(prb.n+1:2*prb.n)'
+                                  zeros(1,2*prb.n)];
+
+    prb.cnstr_fun_jac_u = @(x,u) [zeros(1,prb.n+1);
+                                  zeros(1,prb.n+1);
+                                  zeros(1,prb.n+1);
+                                  -u(1:prb.n)'/norm(u(1:prb.n)) 0];    
 
     % SCP parameters
 
@@ -81,14 +102,13 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','mosek','verbose',false);
+    prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
     
     prb.tr_norm = 2;
     % prb.tr_norm = inf;
     % prb.tr_norm = 'quad';
     
     prb.wvc = wvc;
-    prb.wvb = wvb;
     prb.wtr = wtr;
     prb.cost_factor = cost_factor;
     
@@ -96,33 +116,50 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.epstr = 1e-7;
 
     % Takes in unscaled data
-    prb.time_of_maneuver = @(x,u) disc.time_of_maneuver(prb.disc,prb.tau,u(prb.n+1,:));    
-    prb.time_grid = @(tau,x,u) disc.time_grid(prb.disc,tau,u(prb.n+1,:));    
+    prb.time_of_maneuver = @(z,u) disc.time_of_maneuver(prb.disc,prb.tau,u(prb.n+1,:));    
+    prb.time_grid = @(tau,z,u) disc.time_grid(prb.disc,tau,u(prb.n+1,:));    
     
     % Convenient functions for accessing RHS of nonlinear and linearized ODE
-    prb.dyn_func = @(t,x,u) plant.doubleint.dyn_func(x,u(1:prb.n),u(prb.n+1),prb.n,prb.c_d,prb.g);
-    prb.dyn_func_linearize = @(tbar,xbar,ubar) evaluate_linearization(xbar,ubar,prb.n,prb.c_d,prb.g);
+    prb.dyn_func = @(t,z,u) evaluate_dyn_func(z,u,prb.n,prb.c_d,prb.g,prb.cnstr_fun);
+    prb.dyn_func_linearize = @(tbar,zbar,ubar) evaluate_linearization(zbar,ubar,prb.n,prb.c_d,prb.g,prb.cnstr_fun,...
+                                               prb.cnstr_fun_jac_x,prb.cnstr_fun_jac_u);
 
 end
 
-function dz = evaluate_dyn_func(z,u,n,c_d,g,gam,robs_scl,aobs_scl)
+function dz = evaluate_dyn_func(z,u,n,c_d,g,cnstr_fun)
     x = z(1:2*n);
+    cnstr_val = cnstr_fun(x,u);
     dx = plant.doubleint.dyn_func(x,u(1:n),u(n+1),n,c_d,g);
     dz = [dx;
-          misc.softplus( -norm(x(1:n)-robs_scl(:,1)) + aobs_scl(1) ,gam);
-          misc.softplus( -norm(x(1:n)-robs_scl(:,2)) + aobs_scl(2) ,gam)];
+          arrayfun(@(y) max(0,y),cnstr_val) .^ 2];
 end
 
-function [A,B,w] = evaluate_linearization(z,u,n,c_d,g,gam,robs_scl,aobs_scl)
+function [A,B,w] = evaluate_linearization(z,u,n,c_d,g,cnstr_fun,cnstr_fun_jac_x,cnstr_fun_jac_u)
+
     x = z(1:2*n);
     [dfdx,dfdu,dfds] = plant.doubleint.compute_linearization(x,u(1:n),u(n+1),n,c_d,g);
     dfdu = [dfdu,dfds];
 
-    A = [dfdx zeros(2*n,2);
-         misc.softplus_derv( -norm(x(1:n)-robs_scl(:,1)) + aobs_scl(1) ,gam)*( -(x(1:n)-robs_scl(:,1))'/norm(x(1:n)-robs_scl(:,1)) ) zeros(2*n,n+2);
-         misc.softplus_derv( -norm(x(1:n)-robs_scl(:,2)) + aobs_scl(2) ,gam)*( -(x(1:n)-robs_scl(:,2))'/norm(x(1:n)-robs_scl(:,2)) ) zeros(2*n,n+2)];
+    cnstr_val = cnstr_fun(x,u);
+    cnstr_val_jac_x = cnstr_fun_jac_x(x,u);
+    cnstr_val_jac_u = cnstr_fun_jac_u(x,u);
+
+    m = length(cnstr_val);
+    absg2 = zeros(m,1);
+    absg2_jac_x = zeros(m,2*n);
+    absg2_jac_u = zeros(m,n+1);
+    for j = 1:m
+        absg2(j) = max(0,cnstr_val(j))^2;
+        if cnstr_val(j) > 0
+            absg2_jac_x(j,:) = 2*cnstr_val(j)*cnstr_val_jac_x(j,:);
+            absg2_jac_u(j,:) = 2*cnstr_val(j)*cnstr_val_jac_u(j,:);
+        end
+    end
+
+    A = [dfdx        zeros(2*n,m);
+         absg2_jac_x zeros(m,m)];
     B = [dfdu;
-        zeros(2,n+1)];
-    h = evaluate_dyn_func(z,u,n,c_d,g,gam,robs_scl,aobs_scl);
+         absg2_jac_u];
+    h = evaluate_dyn_func(z,u,n,c_d,g,cnstr_fun);
     w = h - A*z - B*u;
 end

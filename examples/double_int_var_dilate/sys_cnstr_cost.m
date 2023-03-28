@@ -1,5 +1,5 @@
 function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
-                                                    xbar,~)
+                                                    xbar,ubar)
 % r    = x(1:3)
 % v    = x(4:6)
 % T    = u(1:3)
@@ -14,7 +14,7 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
     s   = sdpvar(1,K);
 
     % Obstacle avoidance buffer
-    nu_obs = sdpvar(prb.nobs,K);
+    nu_ncvx = sdpvar(prb.nobs+1,K);
 
     for k = 1:K
         r(:,k)   = prb.Sx(1:prb.n,1:prb.n)                  *x(1:prb.n,k)          + prb.cx(1:prb.n);
@@ -44,13 +44,16 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
 
         for j = 1:prb.nobs
             cnstr = [cnstr;
-                     norm(xbar(1:prb.n,k)-prb.robs(:,j)) - prb.aobs(j) + dot(xbar(1:prb.n,k)-prb.robs(:,j),r(:,k)-xbar(1:prb.n,k))/norm(xbar(1:prb.n,k)-prb.robs(:,j)) + nu_obs(j,k) >= 0;
-                     nu_obs(j,k) >= 0];
+                     norm(xbar(1:prb.n,k)-prb.robs(:,j)) - prb.aobs(j) + dot(xbar(1:prb.n,k)-prb.robs(:,j),r(:,k)-xbar(1:prb.n,k))/norm(xbar(1:prb.n,k)-prb.robs(:,j)) + nu_ncvx(j,k) >= 0;
+                     nu_ncvx(j,k) >= 0];
         end
+        cnstr = [cnstr;
+                norm(ubar(1:prb.n,k)) - prb.umin + dot(ubar(1:prb.n,k),T(:,k)-ubar(1:prb.n,k))/norm(ubar(1:prb.n,k)) + nu_ncvx(end,k) >= 0;
+                nu_ncvx(end,k) >= 0];
 
     end  
 
-    vc_cnstr = sum(nu_obs(:));    
+    vc_cnstr = sum(nu_ncvx(:));    
 
     cost_fun = cost_fun + prb.cost_factor*norm(u(:)) + prb.wvb*vc_cnstr;
 

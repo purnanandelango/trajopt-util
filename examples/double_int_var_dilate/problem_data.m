@@ -27,10 +27,11 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.rmax = 40;
     prb.vmax = 5;
     prb.umax = 5;
+    prb.umin = 2;
 
     prb.smin = 0.01;
     prb.smax = 10;
-    prb.dtmin = 0.01;
+    prb.dtmin = 0.1;
     prb.dtmax = 3;
     prb.ToFmax = 20;
 
@@ -38,8 +39,8 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.nobs = 2;
 
     prb.robs = [-5 -10;
-                 5  20];
-    prb.aobs = [4 5];
+                 6  20];
+    prb.aobs = [6 7];
 
     % Boundary conditions
 
