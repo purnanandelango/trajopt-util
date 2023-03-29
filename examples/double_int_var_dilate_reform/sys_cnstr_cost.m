@@ -36,11 +36,10 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(z,u,prb,...
         
         cnstr = [cnstr;
                  norm(T(:,k)) <= prb.umax;                                                                     % Thrust magnitude upper bound
-                 % norm(v(:,k)) <= prb.vmax;                                                                     % Velocity magnitude upper bound
                  norm(r(:,k),'inf') <= prb.rmax; 
                  prb.smin <= s(k) <= prb.smax];                                                                % Lower and upper bounds on dilation factor
         
-        % cost_fun = cost_fun + prb.cost_factor*(norm(u(1:prb.n,k)) + 2*(u(prb.n+1,k)));
+        cost_fun = cost_fun + prb.cost_factor*(norm(u(1:prb.n,k)) + 2*(u(prb.n+1,k)));
 
         if k < K
             cnstr = [cnstr;
@@ -49,7 +48,7 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(z,u,prb,...
 
     end  
 
-    cost_fun = cost_fun + prb.cost_factor*norm(u(:));
+    % cost_fun = cost_fun + prb.cost_factor*norm(u(:));
 
     % Compute time of maneuver and constrain time step
     ToF = 0;

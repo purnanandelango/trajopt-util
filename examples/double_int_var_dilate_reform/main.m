@@ -1,10 +1,10 @@
 clearvars
 clc
 
-prb = problem_data(10,20,5e1,0.01,0.001);
+prb = problem_data(20,25,5e2,0.1,0.1);
 
 load('recent_solution','x','u','tau');
-[xbar,ubar] = misc.create_initialization(prb,2,x,u,tau);
+[xbar,ubar] = misc.create_initialization(prb,1,x,u,tau);
 
 [xbar,ubar] = scp.run_ptr_noparam(xbar,ubar,prb,@sys_cnstr_cost);
 tvecbar = prb.time_grid(prb.tau,xbar,ubar);

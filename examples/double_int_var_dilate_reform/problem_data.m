@@ -39,10 +39,10 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.ToFmax = 20;
 
     prb.betmin = zeros(prb.m,1);
-    prb.betmax = [0.1;
-                  0.1;
-                  0.01;
-                  0.01];
+    prb.betmax = [1;
+                  1;
+                  1;
+                  1];
 
     % Obstacle avoidance
     prb.nobs = 2;
@@ -105,7 +105,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','mosek','verbose',false);
+    prb.solver_settings = sdpsettings('solver','ecos','verbose',false);
     
     prb.tr_norm = 2;
     % prb.tr_norm = inf;
