@@ -1,14 +1,13 @@
-function [y,dist_val] = sign_dist_polyhed(x,H,g,varargin)
-% Compute projection of x on polyhedron defined by { z | H*z - g <= 0 }
+function [y,dist_val] = sign_dist_polyhed(x,H,h,varargin)
+% Compute projection of x on polyhedron defined by { z | H*z - h <= 0 }
 % Solve a QP for computing the projection
 
-    if nargin == 3
-        verbose = false;
-    else
+    verbose = false;
+    if nargin > 3
         verbose = varargin{1};
     end
 
-    if max(H*x-g) > 0 % x is outside the polyhedron
+    if max(H*x-h) > 0 % x is outside the polyhedron
 
         % Solve QP to compute projection
 
@@ -17,7 +16,7 @@ function [y,dist_val] = sign_dist_polyhed(x,H,g,varargin)
         P = 2*eye(n);
         q = -2*x;
         prob = osqp;
-        prob.setup(P,q,H,[],g,'alpha',0.1,'verbose',0);
+        prob.setup(P,q,H,[],h,'alpha',0.1,'verbose',verbose);
         res = prob.solve();
         y = res.x;
         dist_val = norm(y-x);
@@ -49,7 +48,7 @@ function [y,dist_val] = sign_dist_polyhed(x,H,g,varargin)
 
         % Compute projection onto halfspaces which define the complement of the polyhedron
         for j = 1:m
-           [y_halfspace(:,j),dist_val_halfspace(j)] = geom.project_halfspace(x,-H(j,:)',-g(j)); 
+           [y_halfspace(:,j),dist_val_halfspace(j)] = geom.project_halfspace(x,-H(j,:)',-h(j)); 
         end
 
         % Pick the minimum distance projection point
