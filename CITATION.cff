@@ -4,7 +4,7 @@ authors:
 - family-names: "Elango"
   given-names: "Purnanand"
   orcid: "https://orcid.org/0000-0002-1856-220X"
-title: "{\\texttt{trajopt-util}}: Utilities for Numerical Trajectory Optimization"
+title: "{trajopt-util}: Utilities for Numerical Trajectory Optimization"
 # version: 0.1
 # doi: ...
 date-released: 02-15-2023
