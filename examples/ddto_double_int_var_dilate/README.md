@@ -1,0 +1,2 @@
+- Large $\Delta t$ causes large single shooting propagation error.
+- With variable dilation, $x^i_k = x^j_k$ is not enough.

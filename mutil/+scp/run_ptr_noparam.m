@@ -150,7 +150,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         
         if vc_term < prb.epsvc && tr_term < prb.epstr
             converged = true;
-            fprintf("+-----------------------------------------------------------------------------------------------------+\n")
+            fprintf("+------------------------------------------------------------------------------------------------------+\n")
             fprintf('Converged!\n')
             break
         end
