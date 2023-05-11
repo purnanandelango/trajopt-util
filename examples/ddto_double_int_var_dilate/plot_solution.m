@@ -1,10 +1,9 @@
 clearvars
 close all
 
-load recent_solution
+load recent_solution_3
+% load solve_2
 cval = {[0.6,0.4,0],[0.6,0,0.4],[0,0.4,0.6],[0.6,0.4,0.6]};
-
-[~,prb.Kstrfine] = min(abs(prb.taustr-tau));
 
 figure
 subplot(2,2,1)
@@ -28,6 +27,17 @@ else
     error('Only 2D and 3D cases are possible.')
 end
 title('Position');
+
+if isfield(prb,'robs')
+    if prb.n == 2
+        th = linspace(0,2*pi);
+        for j = 1:prb.nobs
+            pobs = prb.robs(:,j) + prb.aobs(j)*[cos(th);sin(th)];
+            plot(pobs(1,:),pobs(2,:),'-k','LineWidth',0.5);
+        end
+    end
+end
+
 ax = gca;
 ax.DataAspectRatio = [1,1,1];
 ax.PlotBoxAspectRatio = [1,1,1];
@@ -35,22 +45,22 @@ ax.PlotBoxAspectRatio = [1,1,1];
 
 subplot(2,2,2)
 for j = 1:prb.ntarg
-    plot(tau(1:prb.Kstrfine),nrm_v(1:prb.Kstrfine,j),'-k')
+    plot(tvec(1:prb.Kstrfine,j),nrm_v(1:prb.Kstrfine,j),'-k')
     hold on
-    plot(prb.tau(1:prb.Kstr),nrm_vbar(1:prb.Kstr,j),'ok');    
-    plot(tau(prb.Kstrfine:end),nrm_v(prb.Kstrfine:end,j),'-','Color',cval{j});
-    plot(prb.tau(prb.Kstr+1:end),nrm_vbar(prb.Kstr+1:end,j),'o','Color',cval{j});
+    plot(tvecbar(1:prb.Kstr,j),nrm_vbar(1:prb.Kstr,j),'ok');    
+    plot(tvec(prb.Kstrfine:end,j),nrm_v(prb.Kstrfine:end,j),'-','Color',cval{j});
+    plot(tvecbar(prb.Kstr+1:end,j),nrm_vbar(prb.Kstr+1:end,j),'o','Color',cval{j});
 end
 title('Velocity')
-xlabel('$\tau$');
+xlabel('$t$');
 
 subplot(2,2,3)
 for j = 1:prb.ntarg
-    plot(tau(1:prb.Kstrfine),nrm_T(1:prb.Kstrfine,j),'-k');
+    plot(tvec(1:prb.Kstrfine,j),nrm_T(1:prb.Kstrfine,j),'-k');
     hold on
-    plot(prb.tau(1:prb.Kstr),nrm_Tbar(1:prb.Kstr,j),'ok');    
-    plot(tau(prb.Kstrfine:end),nrm_T(prb.Kstrfine:end,j),'-','Color',cval{j});
-    plot(prb.tau(prb.Kstr:end),nrm_Tbar(prb.Kstr:end,j),'o','Color',cval{j});
+    plot(tvecbar(1:prb.Kstr,j),nrm_Tbar(1:prb.Kstr,j),'ok');    
+    plot(tvec(prb.Kstrfine:end,j),nrm_T(prb.Kstrfine:end,j),'-','Color',cval{j});
+    plot(tvecbar(prb.Kstr:end,j),nrm_Tbar(prb.Kstr:end,j),'o','Color',cval{j});
 end
 title('Thrust');
 xlabel('$t$');

@@ -1,8 +1,24 @@
-function prb = problem_data_2D(K,scp_iters,wvc,wtr,cost_factor)
-    
+function prb = problem_data_2D(K,scp_iters,wvc,wvb,wtr,cost_factor,varargin)
+% Optional arguments: ntarg, r1, v1, rK, vK, cost_bound, Kstr (all seven must be provided simultaneously)
+
+    optnl = struct;
+    if nargin == 13
+        optnl.ntarg = varargin{1};
+        optnl.r1 = varargin{2};
+        optnl.v1 = varargin{3};
+        optnl.rK = varargin{4};
+        optnl.vK = varargin{5};
+        optnl.cost_bound = varargin{6};
+        optnl.Kstr = varargin{7};
+    end    
+
     prb.K = K;
 
-    prb.ntarg = 3;                                  % Number of targets
+    if isfield(optnl,'ntarg')
+        prb.ntarg = optnl.ntarg;
+    else
+        prb.ntarg = 4;                              % Number of targets
+    end
     
     prb.n = 2;                                      % Dimension of double integrator
 
@@ -30,8 +46,13 @@ function prb = problem_data_2D(K,scp_iters,wvc,wtr,cost_factor)
     prb.Kfine = 1+round(20/min(prb.dtau));            % Size of grid on which SCP solution is simulated
     
     % Deferrability index
-    prb.Kstr = round(K/3);
+    if isfield(optnl,'Kstr')
+        prb.Kstr = optnl.Kstr;
+    else
+        prb.Kstr = round(K/3);
+    end
     prb.taustr = prb.tau(prb.Kstr);
+    [~,prb.Kstrfine] = min(abs(prb.taustr-grid.generate_grid(0,1,prb.Kfine,'uniform')));
 
     % System parameters
 
@@ -42,45 +63,63 @@ function prb = problem_data_2D(K,scp_iters,wvc,wtr,cost_factor)
     % Bounds
 
     prb.rmax = 100;
-    prb.vmax = 25;
+    prb.vmax = 15;
     prb.umax = 20;
 
-    prb.smin     = 5;
+    prb.smin     = 1;
     prb.smax     = 50;
-    prb.dtmin    = 1;
-    prb.dtmax    = 5;
+    prb.dtmin    = 0.5;
+    prb.dtmax    = 3;
     prb.ToFmax   = 20;
-    prb.dTmax = 4;
+    prb.dTmax    = 4;
 
-    prb.snom = 15;
-    prb.ToFguess = 15;
+    prb.snom = [5, 25];
+    prb.ToFguess = 10;
 
-    prb.cost_bound = 35*[1,1,1];
+    if isfield(optnl,'cost_bound')
+        prb.cost_bound = optnl.cost_bound;
+    else
+        prb.cost_bound = 100*[1,1,1,1];
+    end
+
+    % Obstacle avoidance
+    prb.nobs = 2;
+
+    prb.robs = [30  10;
+                20  40];
+    prb.aobs = [10 10];    
     
     % Boundary conditions
 
-    prb.r1 = [0;0];           
-    prb.v1 = [0;0];
-    
-    prb.rK = [20   50   0;
-              70   0    50];
-              
-    prb.vK = [1  0  0;
-              0  1  0];
+    if isfield(optnl,'rK')
+        prb.r1 = optnl.r1;           
+        prb.v1 = optnl.v1;
+        prb.rK = optnl.rK;                  
+        prb.vK = optnl.vK;
+    else
+        prb.r1 = [0;0];           
+        prb.v1 = [0;0];
+        
+        prb.rK = [20   50   0   50; 
+                  70   0    50  30];
+                  
+        prb.vK = [1  0  0  0.5;
+                  0  1  0  1];
+    end
 
-    assert(size(prb.rK,2) >= prb.ntarg && size(prb.vK,2) >= prb.ntarg,"Insufficient targets states specified.");
+    assert(size(prb.rK,2) == prb.ntarg && size(prb.vK,2) == prb.ntarg,"Incorrect no. of targets states specified.");
 
     prb.x1 = repmat( [prb.r1;prb.v1],[prb.ntarg,1]);
     prb.xK = reshape([prb.rK;prb.vK],[prb.nx,1]);    
-    prb.u1 = repmat([ones(prb.n,1);prb.ToFguess/K],[prb.ntarg,1]);
-    prb.uK = repmat([ones(prb.n,1);prb.ToFguess/K],[prb.ntarg,1]);
+    prb.u1 = repmat([ones(prb.n,1);prb.ToFguess],[prb.ntarg,1]);
+    prb.uK = repmat([ones(prb.n,1);prb.ToFguess],[prb.ntarg,1]);
 
     % Scaling parameters
     xmin = repmat([-0.5*prb.rmax*ones(prb.n,1); -0.5*prb.vmax*ones(prb.n,1)],[prb.ntarg,1]);
     xmax = repmat([ 0.5*prb.rmax*ones(prb.n,1);  0.5*prb.vmax*ones(prb.n,1)],[prb.ntarg,1]);
     
-    umin = repmat([zeros(prb.n,1);         prb.snom-5],[prb.ntarg,1]);
-    umax = repmat([prb.umax*ones(prb.n,1); prb.snom+5],[prb.ntarg,1]);
+    umin = repmat([zeros(prb.n,1);         prb.snom(1)],[prb.ntarg,1]);
+    umax = repmat([prb.umax*ones(prb.n,1); prb.snom(2)],[prb.ntarg,1]);
 
     [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax]},[-1,1]);
 
@@ -95,16 +134,17 @@ function prb = problem_data_2D(K,scp_iters,wvc,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','ecos','verbose',0);
+    prb.solver_settings = sdpsettings('solver','gurobi','verbose',0);
     
     prb.tr_norm = 2;
     
-    % prb.cost_term = @(z) norm(z);
-    % prb.subopt_type = 'sum_stage_cost';
+    prb.cost_term = @(z) norm(z);
+    prb.subopt_type = 'sum_stage_cost';
     
-    prb.subopt_type = 'sum_quad_u';
+    % prb.subopt_type = 'sum_quad_u';
     
     prb.wvc = wvc;
+    prb.wvb = wvb; 
     prb.wtr = wtr;
     prb.cost_factor = cost_factor;
     

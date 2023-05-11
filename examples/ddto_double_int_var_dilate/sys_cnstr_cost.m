@@ -1,5 +1,5 @@
 function [cnstr,cost_fun,vb_cnstr] = sys_cnstr_cost(x,u,prb,...
-                                                    ~,~)
+                                                    xbar,~)
 
     K = prb.K;
     n = prb.n;
@@ -11,6 +11,12 @@ function [cnstr,cost_fun,vb_cnstr] = sys_cnstr_cost(x,u,prb,...
     T   = sdpvar(n,K,ntarg);
     s   = sdpvar(K,ntarg);
 
+    % Obstacle avoidance buffer
+    nu_ncvx = sdpvar(prb.nobs,ntarg,K);    
+
+    rbar = zeros(n,K);
+    vbar = zeros(n,K);
+
     % Define unscaled states and control inputs
     for j = 1:ntarg
 
@@ -19,7 +25,10 @@ function [cnstr,cost_fun,vb_cnstr] = sys_cnstr_cost(x,u,prb,...
             v(:,k,j)   = prb.Sx(prb.idx_v(:,j),prb.idx_v(:,j)) *x(prb.idx_v(:,j),k)  + prb.cx(prb.idx_v(:,j));
     
             T(:,k,j)   = prb.Su(prb.idx_T(:,j),prb.idx_T(:,j)) *u(prb.idx_T(:,j),k)  + prb.cu(prb.idx_T(:,j));        
-            s(k,j)     = prb.Su(prb.idx_s(j),prb.idx_s(j))     *u(prb.idx_s(j),k)    + prb.cu(prb.idx_s(j));  
+            s(k,j)     = prb.Su(prb.idx_s(j),prb.idx_s(j))     *u(prb.idx_s(j),k)    + prb.cu(prb.idx_s(j));
+
+            rbar(:,k,j) = xbar(prb.idx_r(:,j),k);
+            vbar(:,k,j) = xbar(prb.idx_v(:,j),k);            
         end
 
     end
@@ -50,6 +59,12 @@ function [cnstr,cost_fun,vb_cnstr] = sys_cnstr_cost(x,u,prb,...
                          r(:,k,1) == r(:,k,j);
                          v(:,k,1) == v(:,k,j);
                          T(:,k,1) == T(:,k,j)];
+            end
+
+            for i = 1:prb.nobs
+                cnstr = [cnstr;
+                         norm(rbar(:,k,j)-prb.robs(:,i)) - prb.aobs(i) + dot(rbar(:,k,j)-prb.robs(:,i),r(:,k,j)-rbar(:,k,j))/norm(rbar(:,k,j)-prb.robs(:,i)) + nu_ncvx(i,j,k) >= 0;
+                         nu_ncvx(i,j,k) >= 0];
             end            
         
         end
@@ -99,8 +114,8 @@ function [cnstr,cost_fun,vb_cnstr] = sys_cnstr_cost(x,u,prb,...
     % Time available to defer decision
     defer_time = sum(dt(1:prb.Kstr,1));
 
-    cost_fun = prb.cost_factor*defer_time;
+    vb_cnstr = sum(nu_ncvx(:));    
 
-    vb_cnstr = 0;
+    cost_fun = prb.cost_factor*defer_time + prb.wvb*vb_cnstr;    
 
 end

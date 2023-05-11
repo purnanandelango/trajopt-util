@@ -77,7 +77,7 @@ function prb = problem_data(K,scp_iters,wvc,wvb,wtr,cost_factor)
     prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','mosek','verbose',false);
+    prb.solver_settings = sdpsettings('solver','ecos','verbose',false);
     
     prb.tr_norm = 2;
     % prb.tr_norm = inf;
