@@ -1,9 +1,0 @@
-02/01/21
-
-example 9a  : 	grasp force optimization for a 3D block using two-finger manipulator
-formulation : 	constrained LQR
-constraints :
-    	      	friction cone on grasping force
-              	upper bound on l2 norm of grasp force
-    		  	rotational equilibrium
-               	upper bound on box velocity

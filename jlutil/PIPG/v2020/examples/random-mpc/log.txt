@@ -1,7 +1,0 @@
-02/12/21
-
-example 10  : 	random MPC
-formulation : 	constrained LQR
-constraints :
-				bounds on control input
-				bounds on state
