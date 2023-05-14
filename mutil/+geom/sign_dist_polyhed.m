@@ -1,4 +1,4 @@
-function [y,dist_val] = sign_dist_polyhed(x,H,h,varargin)
+function [y,dist_val,dist_jac] = sign_dist_polyhed(x,H,h,varargin)
 % Compute projection of x on polyhedron defined by { z | H*z - h <= 0 }
 % Solve a QP for computing the projection
 
@@ -56,6 +56,19 @@ function [y,dist_val] = sign_dist_polyhed(x,H,h,varargin)
         y = y_halfspace(:,idx);
         dist_val = -dist_val;
 
+    end
+
+    % Computation of signed distance Jacobian wrt x
+    % Jacobian always has unit norm
+    if abs(dist_val) >= 1e-4
+        dist_jac = (x-y)/dist_val;
+    else % Find a hyperplane of the polyhedron which contains x
+        err_val = zeros(1,size(H,1));
+        for j = 1:size(H,1)
+            err_val(j) = abs(H(j,:)*x-h(j));
+        end
+        [~,idx] = min(err_val);
+        dist_jac = H(idx(1),:)'/norm(H(idx(1),:));
     end
 
 end

@@ -1,5 +1,6 @@
-function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun)
+function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cost_fun)
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
+% Same as run_ptr_noparam except that VC weight is matrix valued
 
     converged = false;
     K = prb.K;
@@ -17,15 +18,8 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
     fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   | log(VC cnstr.) |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
-
-    % Varying trust-region and virtual control weights
-    % wvc_vec = linspace(prb.wvc,prb.wvc/5,prb.scp_iters);
-    % wtr_vec = linspace(prb.wtr,15*prb.wtr,prb.scp_iters);
     
     for j = 1:prb.scp_iters
-
-        % prb.wvc = wvc_vec(j);
-        % prb.wtr = wtr_vec(j);
         
         yalmip clear
 
@@ -39,7 +33,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         cnstr = [];
         for k = 1:K-1
             % Virtual control penalty            
-            Jvc = Jvc + sum(vc_plus(:,k) + vc_minus(:,k));
+            Jvc = Jvc + sum(prb.Wvc*(vc_plus(:,k) + vc_minus(:,k)));
             cnstr = [cnstr;
                      vc_plus(:,k) >= 0;
                      vc_minus(:,k) >= 0];
@@ -102,7 +96,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         cnstr = [cnstr;cnstr_sys];
         
         % Objective
-        obj_fun = prb.wvc*Jvc + prb.wtr*sum(Jtr) + cost_fun;            
+        obj_fun = Jvc + prb.wtr*sum(Jtr) + cost_fun;            
         
         % Solve
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings);
@@ -119,8 +113,14 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         x = value(x);
         u = value(u);
         cost_val = value(cost_fun);
-        vc_term = value(Jvc);
+        vc_term = 0;
         vc_constr_term = value(vc_constr_term);
+
+        for k = 1:K-1
+            % Virtual control penalty            
+            vc_term = vc_term + sum(value(vc_plus(:,k)) + value(vc_minus(:,k)));
+        end        
+
 
         % Ensure that the TR value is always displayed consistently with 2-norm
         % Note that this is for display and for evaluation of termination criteria 
