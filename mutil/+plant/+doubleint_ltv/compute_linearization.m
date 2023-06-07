@@ -1,13 +1,9 @@
 function [A,B,w] = compute_linearization(t,x,u,T,n)
 % Linearization of RHS of ODE describing 2D or 3D time-varying double integrator
 
-    [f,fun1,fun2] = plant.doubleint_ltv.dyn_func(t,x,u,T,n);
-
-    A = [zeros(n) eye(n);
-         zeros(n) eye(n)*fun1];
-
-    B = [zeros(n);
-         eye(n)*fun2];
+    f = plant.doubleint_ltv.dyn_func(t,x,u,T,n);
+    A = plant.doubleint_ltv.Amat(t,T,n);
+    B = plant.doubleint_ltv.Bmat(t,T,n);
 
     w = f - A*x - B*u;
 
