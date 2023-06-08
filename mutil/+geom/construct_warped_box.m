@@ -14,5 +14,12 @@ function [H,h] = construct_warped_box(box_size,box_center,varargin)
     T = scl*Q'*diag(min(1/scl,rand(1,n)))*Q;
     H = [ In;
          -In ]*T;
-    h = H*box_center + box_size*ones(2*n,1);
+    % Compute polytope RHS
+    if length(box_size) == 1
+        h = H*box_center + box_size*ones(2*n,1);
+    elseif length(box_size) == n
+        h = H*box_center + [box_size;box_size];
+    else
+        error('Box size should either be a positive scalar or a vector of length same as box center.')
+    end
 end
