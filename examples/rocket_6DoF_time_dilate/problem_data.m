@@ -89,12 +89,12 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     % SCP parameters
 
-    prb.disc = "ZOH";
-    prb.foh_type = "v1";
+    prb.disc = "FOH";
+    prb.foh_type = "v3";
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8);
-    % prb.solver_settings = sdpsettings('solver','scs','verbose',false);
+    % prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8);
+    prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
     
     prb.tr_norm = 2;
     % prb.tr_norm = inf;
