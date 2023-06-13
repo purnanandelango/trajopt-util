@@ -1,11 +1,10 @@
 function [H,h] = construct_warped_box(box_size,box_center,varargin)
 % Construct a linear inequality representation of a warped and offset cube
+    scl = 3; % Default scaling factor
     if nargin >= 3
         rng(varargin{1}); % Set random number generator seed if provided
         if nargin == 4
             scl = varargin{2}; % Set scaling factor if provided
-        else
-            scl = 3;
         end
     end
     n = length(box_center);
