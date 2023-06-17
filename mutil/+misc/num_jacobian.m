@@ -10,6 +10,11 @@ function dfun = num_jacobian(fun,z)
     for j = 1:n        
         fp = fun(z+pert(j)*In(:,j));
         fm = fun(z-pert(j)*In(:,j));
-        dfun = [dfun,0.5*(fp-fm)/pert(j)];
+        dfpm = fp-fm;
+        if norm(dfpm) < epsabs 
+            dfun = [dfun, zeros(size(dfpm))];
+        else
+            dfun = [dfun,0.5*(fp-fm)/pert(j)];
+        end
     end
 end

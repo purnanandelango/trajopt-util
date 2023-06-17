@@ -60,7 +60,7 @@ function [y,dist_val,dist_jac] = sign_dist_polyhed(x,H,h,varargin)
 
     % Computation of signed distance Jacobian wrt x
     % Jacobian always has unit norm
-    if abs(dist_val) >= 1e-4
+    if abs(dist_val) >= 1e-5
         dist_jac = (x-y)/dist_val;
     else % Find a hyperplane of the polyhedron which contains x
         err_val = zeros(1,size(H,1));
