@@ -12,8 +12,8 @@ function [xbar,ubar,pbar] = create_initialization(prb,flg,varargin)
             end
 
             for k = 1:K
-                xbar(:,k) = (1-prb.tau(k))*prb.x1 + prb.tau(k)*prb.xK; 
-                ubar(:,k) = (1-prb.tau(k))*prb.u1 + prb.tau(k)*prb.uK;
+                xbar(:,k) = ( (prb.tau(end)-prb.tau(k))*prb.x1 + (prb.tau(k)-prb.tau(1))*prb.xK )/(prb.tau(end)-prb.tau(1)); 
+                ubar(:,k) = ( (prb.tau(end)-prb.tau(k))*prb.u1 + (prb.tau(k)-prb.tau(1))*prb.uK )/(prb.tau(end)-prb.tau(1));
             end
 
             % If the indices of the quaternions are known, then perform SLERP using q_lib/q_slerp

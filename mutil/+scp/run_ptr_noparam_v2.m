@@ -1,6 +1,7 @@
-function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cost_fun)
+function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cost_fun,varargin)
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
 % Same as run_ptr_noparam except that VC weight is matrix valued
+% Provision for updating problem parameters after each SCP iteration
 
     converged = false;
     K = prb.K;
@@ -155,6 +156,10 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
             break
         end
         
+        if nargin == 5 && j < prb.scp_iters % Update problem parameters
+            prb = varargin{1}(prb,xbar,ubar);
+        end
+    
     end
 
 end
