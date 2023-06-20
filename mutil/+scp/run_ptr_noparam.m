@@ -7,7 +7,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
     % Check if type of FOH computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
-        assert(ismember(foh_type,["v1","v2","v3"]),"Incorrect type of FOH discretization.");        
+        assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
     else
         foh_type = "v3";
     end

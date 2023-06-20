@@ -1,6 +1,6 @@
 function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v1(tbar,xbar,ubar,h,func,func_linz,varargin)
 % Compute FOH discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
-%   There are no system parameters
+%   No linearization with respect to system parameters
 %
 %   tbar          : 1 x N
 %   xbar          : nx x N

@@ -1,6 +1,6 @@
 function [Ak,Bmk,Bpk,Sk,wk,defect_traj] = compute_foh_v1(tbar,xbar,ubar,pbar,h,func,func_linz,varargin)
 % Compute FOH discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
-%   The system parameters are in pbar (including the time dilation factor if applicatble)
+%   Linearization wrt system parameters pbar (including the time dilation factor if applicable) is considered
 %   This function doesn't discriminate between the time dilation factor and other system parameters
 %
 %   tbar          : 1 x N
