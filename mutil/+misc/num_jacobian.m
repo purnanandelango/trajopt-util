@@ -6,15 +6,16 @@ function dfun = num_jacobian(fun,z)
     epsabs = 1e-8;
     epsrel = 1e-6; 
 
-    pert = max(epsabs,epsrel*z);    
+    pert = max(epsabs,epsrel*abs(z));    
+    % pert = epsrel*ones(size(z));
     for j = 1:n        
         fp = fun(z+pert(j)*In(:,j));
         fm = fun(z-pert(j)*In(:,j));
         dfpm = fp-fm;
-        if norm(dfpm) < epsabs 
-            dfun = [dfun, zeros(size(dfpm))];
-        else
-            dfun = [dfun,0.5*(fp-fm)/pert(j)];
-        end
+        % if norm(dfpm) < epsabs 
+        %     dfun = [dfun, zeros(size(dfpm))];
+        % else
+        dfun = [dfun,0.5*dfpm/pert(j)];
+        % end
     end
 end
