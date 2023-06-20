@@ -16,7 +16,7 @@ function [y,dist_val,dist_jac] = sign_dist_polyhed(x,H,h,varargin)
         P = 2*eye(n);
         q = -2*x;
         prob = osqp;
-        prob.setup(P,q,H,[],h,'alpha',0.1,'verbose',verbose);
+        prob.setup(P,q,H,[],h,'verbose',verbose);
         res = prob.solve();
         y = res.x;
         dist_val = norm(y-x);
