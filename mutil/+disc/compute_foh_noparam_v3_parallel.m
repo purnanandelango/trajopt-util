@@ -42,7 +42,7 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
             ufunc{k} = @(t) ( ubar(:,k)*(tbar(k+1)-t) + ubar(:,k+1)*(t-tbar(k)) )/( tbar(k+1) - tbar(k) );
         end
     
-        for k = 1:N-1
+        parfor k = 1:N-1
             zk = [xbar(:,k);ABmBpw_init];
     
             % Ensure that the integration step is not too small
