@@ -107,10 +107,13 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         % Solve
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings);
         % assert(ismember(yalmip_out.problem,[0,3]),"Subproblem is unsolved.\nSolver message: %s",yalmiperror(yalmip_out.problem));
-        if ~ismember(yalmip_out.problem,[0,3])
+        if ~ismember(yalmip_out.problem,[0,4])
             fprintf("+------------------------------------------------------------------------------------------------------+\n");
             fprintf('Subproblem is unsolved. Returning the previous iterate.\n'); 
             break
+        end
+        if yalmip_out.problem == 4
+            warning("Solver numerical issues.");
         end
         
         % Post process
