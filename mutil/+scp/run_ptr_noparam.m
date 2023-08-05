@@ -105,6 +105,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         obj_fun = prb.wvc*Jvc + prb.wtr*sum(Jtr) + cost_fun;            
         
         % Solve
+        % Model = export(cnstr,obj_fun,prb.solver_settings); % Export input to solver from YALMIP
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings);
         % assert(ismember(yalmip_out.problem,[0,3]),"Subproblem is unsolved.\nSolver message: %s",yalmiperror(yalmip_out.problem));
         if ~ismember(yalmip_out.problem,[0,4])
