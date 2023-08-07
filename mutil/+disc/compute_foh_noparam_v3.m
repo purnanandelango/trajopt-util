@@ -50,7 +50,9 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
         if nargin == 7
            [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu,varargin{1}),tspan,zk,h_step,ufunc,tspan);
         elseif nargin == 6
-            [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,h_step,ufunc,tspan);
+            % [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,h_step,ufunc,tspan);
+            [~,z_tmp] = ode89(@(t,z) foh_ode(t,z,ufunc(t),tspan,func,func_linz,nx,nu,nx2,nxnu),tspan,zk);
+            z_ = z_tmp';
         else
             error("Incorrect no. of arguments for compute_foh.")
         end
