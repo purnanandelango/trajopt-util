@@ -41,7 +41,11 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
 
         % Ensure that the integration step is not too small
         % h_step = max((1/40)*diff(tspan),h);
-        h_step = h;
+        if length(h) == N-1
+            h_step = h(k);
+        else
+            h_step = h;
+        end
         
         if nargin == 7
            [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu,varargin{1}),tspan,zk,h_step,ufunc,tspan);
