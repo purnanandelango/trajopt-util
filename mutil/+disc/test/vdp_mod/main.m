@@ -1,6 +1,6 @@
 clearvars
 close all
-clc
+% clc
 
 rng default
 
@@ -12,12 +12,12 @@ flg = true;
 
 % Type of discretization
 % discflg = "FOH";
-discflg = "FOH w/o param.";
+% discflg = "FOH w/o param.";
 % discflg = "ZOH";
-% discflg = "ZOH w/o param.";
+discflg = "ZOH w/o param.";
 
 % Instance of compute_foh
-foh_type = "v3"; % v1, v2, v3
+foh_type = "v3"; % v1, v2, v3, v3_parallel
 
 nx = 2;
 nu = 2;
@@ -59,14 +59,14 @@ if discflg == "FOH"
 elseif discflg == "FOH w/o param."
     vdp_mod_noparam = @(t,x,u) vdp_mod(t,x,u,pbar);
     tic
-    [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,tbar_,xbar_,ubar_,h,vdp_mod_noparam,@(t,x,u) vdp_mod_linearize_noparam(t,x,u,pbar));
+    [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,tbar_,xbar_,ubar_,h,vdp_mod_noparam,@(t,x,u) vdp_mod_linearize_noparam(t,x,u,pbar),'ode45');
     for k = 1:N-1
         z_(:,k+1) = Ak(:,:,k)*z_(:,k) + Bmk(:,:,k)*v_(:,k) + Bpk(:,:,k)*v_(:,k+1) + wk(:,k);
     end
     toc    
 elseif discflg == "ZOH"
     tic
-    [Ak,Bk,Sk,wk] = disc.compute_zoh(tbar_,xbar_,ubar_,pbar,h,@vdp_mod,@vdp_mod_linearize);
+    [Ak,Bk,Sk,wk] = disc.compute_zoh(tbar_,xbar_,ubar_,pbar,h,@vdp_mod,@vdp_mod_linearize,'ode89');
     for k = 1:N-1
         z_(:,k+1) = Ak(:,:,k)*z_(:,k) + Bk(:,:,k)*v_(:,k) + Sk(:,:,k)*p_ + wk(:,k);
     end
@@ -74,7 +74,7 @@ elseif discflg == "ZOH"
 elseif discflg == "ZOH w/o param."
     vdp_mod_noparam = @(t,x,u) vdp_mod(t,x,u,pbar);
     tic
-    [Ak,Bk,wk] = disc.compute_zoh_noparam(tbar_,xbar_,ubar_,h,vdp_mod_noparam,@(t,x,u) vdp_mod_linearize_noparam(t,x,u,pbar));
+    [Ak,Bk,wk] = disc.compute_zoh_noparam(tbar_,xbar_,ubar_,h,vdp_mod_noparam,@(t,x,u) vdp_mod_linearize_noparam(t,x,u,pbar),'ode89');
     for k = 1:N-1
         z_(:,k+1) = Ak(:,:,k)*z_(:,k) + Bk(:,:,k)*v_(:,k) + wk(:,k);
     end

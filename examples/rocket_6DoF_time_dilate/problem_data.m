@@ -8,7 +8,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.np = 1;
     prb.tau = ((1:prb.K)-1)/(prb.K-1); % Scaled time grid
     
-    prb.h = (1/40)*1/(prb.K-1); % Step size for integration that computes FOH matrices
+    prb.h = (1/10)*1/(prb.K-1); % Step size for integration that computes FOH matrices
     
     % System parameters
 
@@ -89,8 +89,9 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     % SCP parameters
 
-    prb.disc = "FOH";
-    prb.foh_type = "v3";
+    prb.disc = "ZOH";
+    prb.foh_type = "v1";
+    prb.ode_solver = 'ode89';
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
     prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8);

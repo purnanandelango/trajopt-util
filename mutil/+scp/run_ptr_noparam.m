@@ -1,5 +1,6 @@
-function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun)
+function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun,varargin)
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
+% Provision for updating problem parameters after each SCP iteration
 
     converged = false;
     K = prb.K;
@@ -9,7 +10,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         foh_type = string(prb.foh_type);
         assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
     else
-        foh_type = "v3";
+        foh_type = "v3"; % Default
     end
     
     fprintf("+------------------------------------------------------------------------------------------------------+\n");
@@ -158,6 +159,10 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
             fprintf("+------------------------------------------------------------------------------------------------------+\n")
             fprintf('Converged!\n')
             break
+        end
+
+        if nargin == 5 && j < prb.scp_iters % Update problem parameters
+            prb = varargin{1}(prb,xbar,ubar);
         end
         
     end

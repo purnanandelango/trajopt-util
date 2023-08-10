@@ -1,5 +1,5 @@
 clearvars
-clc
+% clc
 
 prb = problem_data(20,10,2e2,0.1,0.1);
 
@@ -10,7 +10,7 @@ load('recent_solution','x','u','tvec');
 
 % Simulate solution on fine grid
 tvec = prb.tau*pbar;
-[t,x,u] = disc.simulate_dyn(xbar(:,1),{tvec,ubar},@(t,x,u) prb.dyn_func(t,x,u,1.0),[tvec(1),tvec(end)],prb.Kfine,prb.disc);
+[t,x,u] = disc.simulate_dyn(xbar(:,1),{tvec,ubar},@(t,x,u) prb.dyn_func(t,x,u,1.0),[tvec(1),tvec(end)],prb.Kfine,prb.disc,prb.ode_solver);
 
 m = x(1,:);
 rI = x(2:4,:);
