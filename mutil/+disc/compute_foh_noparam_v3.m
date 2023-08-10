@@ -11,7 +11,7 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
 %                   func(x,u)
 %   func_linz     : linearization of rhs of system ODE 
 %                   [A,B,w] = func_linz(x,u)
-%   varargin{1}   : structure containing system parameters (optional)
+%   varargin{1}   : specify in-built MATLAB ode solver      (optional)
 %
 %   Ak            : nx x nx x N-1 
 %   Bmk           : nx x nu x N-1 
@@ -21,6 +21,10 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
 
     [nx,N] = size(xbar);
     nu = size(ubar,1);
+
+    if length(h) == 1 % Same integration step for each subinterval
+        h = h*ones(1,N-1);
+    end    
     
     Ak  = zeros(nx,nx,N-1);
     Bmk = zeros(nx,nu,N-1);
@@ -40,21 +44,16 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
         ufunc = @(t) ( ubar(:,k)*(tbar(k+1)-t) + ubar(:,k+1)*(t-tbar(k)) )/( tbar(k+1) - tbar(k) );
 
         % Ensure that the integration step is not too small
-        % h_step = max((1/40)*diff(tspan),h);
-        if length(h) == N-1
-            h_step = h(k);
-        else
-            h_step = h;
-        end
+        % h_step = max((1/40)*diff(tspan),h(k)); 
+        h_step = h(k);
         
         if nargin == 7
-           [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu,varargin{1}),tspan,zk,h_step,ufunc,tspan);
-        elseif nargin == 6
-            % [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,h_step,ufunc,tspan);
-            [~,z_tmp] = ode89(@(t,z) foh_ode(t,z,ufunc(t),tspan,func,func_linz,nx,nu,nx2,nxnu),tspan,zk);
+            [~,z_tmp] = feval(varargin{1},@(t,z) foh_ode(t,z,ufunc(t),tspan,func,func_linz,nx,nu,nx2,nxnu),tspan,zk);
             z_ = z_tmp';
+        elseif nargin == 6
+            [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,h_step,ufunc,tspan);
         else
-            error("Incorrect no. of arguments for compute_foh.")
+            error("Incorrect no. of arguments for compute_foh_noparam_v3.");
         end
         zkp1 = z_(:,end);
         
@@ -72,16 +71,9 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
 
 end
 
-function f = foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu,varargin)
+function f = foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu)
 % z = [x;PhiA(:);PhiBm(:);PhiBp(:);Phiw];
 % p = [tk;tkp1]
-% varargin{1} : structure containing system parameters (optional)
-
-    flg = false;
-    if length(varargin)==1
-        sys_struct = varargin{1};
-        flg = true;
-    end
     
     x     =         z(1               : nx);    
     PhiA  = reshape(z(nx+1            : nx+nx2),[nx,nx]);
@@ -89,11 +81,7 @@ function f = foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu,varargin)
     PhiBp = reshape(z(nx+nx2+nxnu+1   : nx+nx2+2*nxnu),[nx,nu]);
     Phiw  =         z(nx+nx2+2*nxnu+1 : nx+nx2+2*nxnu+nx);    
     
-    if flg
-        [A,B,w] = func_linz(t,x,u,sys_struct);
-    else
-        [A,B,w] = func_linz(t,x,u);
-    end
+    [A,B,w] = func_linz(t,x,u);
     
     tkp1 = p(end);
     tk = p(end-1);
@@ -104,10 +92,6 @@ function f = foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu,varargin)
     f3 = A*PhiBp + B*(t-tk)/delta_t;
     f4 = A*Phiw  + w;    
     
-    if flg
-        f = [func(t,x,u,sys_struct);f1(:);f2(:);f3(:);f4];
-    else
-        f = [func(t,x,u);f1(:);f2(:);f3(:);f4];    
-    end
+    f = [func(t,x,u);f1(:);f2(:);f3(:);f4];
 
 end

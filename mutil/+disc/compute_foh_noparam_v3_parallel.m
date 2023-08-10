@@ -1,5 +1,6 @@
-function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func,func_linz)
+function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func,func_linz,varargin)
     % Compute FOH discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
+    % Computation across the N-1 intervals is parallelized with parfor
     %   No linearization with respect to system parameters; no system parameters are allowed
     %   Note that this approach completely avoids matrix inversions by reformulating the initial value problem for computing the discrete-time B matrices
     %
@@ -11,13 +12,12 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
     %                   func(x,u)
     %   func_linz     : linearization of rhs of system ODE 
     %                   [A,B,w] = func_linz(x,u)
-    %   varargin{1}   : structure containing system parameters (optional)
+    %   varargin{1}   : specify in-built MATLAB ode solver (optional)
     %
     %   Ak            : nx x nx x N-1 
     %   Bmk           : nx x nu x N-1 
     %   Bpk           : nx x nu x N-1 
     %   wk            : nx x N-1
-    
     
         [nx,N] = size(xbar);
         nu = size(ubar,1);
@@ -34,6 +34,10 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
         Inx = eye(nx);
         ABmBpw_init = [Inx(:);zeros(nxnu,1);zeros(nxnu,1);zeros(nx,1)];
 
+        if length(h) == 1 % Same integration step for each subinterval
+            h = h*ones(1,N-1);
+        end
+        
         % SETUP
         tspan = cell(1,N-1);
         ufunc = cell(1,N-1);
@@ -41,28 +45,54 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
             tspan{k} = [tbar(k);tbar(k+1)];
             ufunc{k} = @(t) ( ubar(:,k)*(tbar(k+1)-t) + ubar(:,k+1)*(t-tbar(k)) )/( tbar(k+1) - tbar(k) );
         end
-    
-        parfor k = 1:N-1
-            zk = [xbar(:,k);ABmBpw_init];
-    
-            % Ensure that the integration step is not too small
-            % h_step = max((1/40)*diff(tspan),h);
-            h_step = h;
-            
-            [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk,h_step,ufunc{k},tspan{k});
 
-            zkp1 = z_(:,end);
-            
-            % defect_traj(k) = norm(zkp1(1:nx) - xbar(:,k+1));
-            
-            Akmat       = reshape(zkp1(nx+1:nx+nx2),[nx,nx]);
-            Bmk(:,:,k)  = reshape(zkp1(nx+nx2+1:nx+nx2+nxnu),[nx,nu]);
-            Bpk(:,:,k)  = reshape(zkp1(nx+nx2+nxnu+1:nx+nx2+2*nxnu),[nx,nu]);
-            wk(:,k)     = zkp1(nx+nx2+2*nxnu+1:2*nx+nx2+2*nxnu,1);
-            % vk(:,k)     = zkp1(1:nx) - Akmat*xbar(:,k) - Bmk(:,:,k)*ubar(:,k) - Bpk(:,:,k)*ubar(:,k+1);
-            Ak(:,:,k)   = Akmat;
-    
-            % norm(wk(:,k)-vk(:,k))
+        if nargin == 7
+            solver_name = varargin{1};            
+
+            parfor k = 1:N-1
+                zk = [xbar(:,k);ABmBpw_init];
+                
+                % [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk,h(k),ufunc{k},tspan{k});
+                % zkp1 = z_(:,end);
+
+                [~,z_tmp] = feval(solver_name,@(t,z) foh_ode(t,z,ufunc{k}(t),tspan{k},func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk);
+                z_ = z_tmp'; 
+                zkp1 = z_(:,end);               
+                
+                % defect_traj(k) = norm(zkp1(1:nx) - xbar(:,k+1));
+                
+                Akmat       = reshape(zkp1(nx+1:nx+nx2),[nx,nx]);
+                Bmk(:,:,k)  = reshape(zkp1(nx+nx2+1:nx+nx2+nxnu),[nx,nu]);
+                Bpk(:,:,k)  = reshape(zkp1(nx+nx2+nxnu+1:nx+nx2+2*nxnu),[nx,nu]);
+                wk(:,k)     = zkp1(nx+nx2+2*nxnu+1:2*nx+nx2+2*nxnu,1);
+                % vk(:,k)     = zkp1(1:nx) - Akmat*xbar(:,k) - Bmk(:,:,k)*ubar(:,k) - Bpk(:,:,k)*ubar(:,k+1);
+                Ak(:,:,k)   = Akmat;
+        
+                % norm(wk(:,k)-vk(:,k))
+            end            
+
+        elseif nargin == 6
+
+            parfor k = 1:N-1
+                zk = [xbar(:,k);ABmBpw_init];
+                
+                [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk,h(k),ufunc{k},tspan{k});
+                zkp1 = z_(:,end);
+                
+                % defect_traj(k) = norm(zkp1(1:nx) - xbar(:,k+1));
+                
+                Akmat       = reshape(zkp1(nx+1:nx+nx2),[nx,nx]);
+                Bmk(:,:,k)  = reshape(zkp1(nx+nx2+1:nx+nx2+nxnu),[nx,nu]);
+                Bpk(:,:,k)  = reshape(zkp1(nx+nx2+nxnu+1:nx+nx2+2*nxnu),[nx,nu]);
+                wk(:,k)     = zkp1(nx+nx2+2*nxnu+1:2*nx+nx2+2*nxnu,1);
+                % vk(:,k)     = zkp1(1:nx) - Akmat*xbar(:,k) - Bmk(:,:,k)*ubar(:,k) - Bpk(:,:,k)*ubar(:,k+1);
+                Ak(:,:,k)   = Akmat;
+        
+                % norm(wk(:,k)-vk(:,k))
+            end            
+
+        else 
+            error("Incorrect number of arguments passed.")
         end
     
     end

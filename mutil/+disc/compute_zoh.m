@@ -12,7 +12,7 @@ function [Ak,Bk,Sk,wk,defect_traj] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func
 %                   func(x,u,p)
 %   func_linz     : linearization of rhs of system ODE 
 %                   [A,B,S,w] = func_linz(x,u,p)
-%   varargin{1}   : structure containing system parameters (optional)
+%   varargin{1}   : specify in-built MATLAB ode solver (optional)
 %
 %   Ak            : nx x nx x N-1 
 %   Bk            : nx x nu x N-1 
@@ -23,6 +23,10 @@ function [Ak,Bk,Sk,wk,defect_traj] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func
     [nx,N] = size(xbar);
     nu = size(ubar,1);
     np = length(pbar);
+
+    if length(h) == 1 % Same integration step for each subinterval
+        h = h*ones(1,N-1);
+    end        
     
     Ak  = zeros(nx,nx,N-1);
     Bk  = zeros(nx,nu,N-1);
@@ -43,14 +47,16 @@ function [Ak,Bk,Sk,wk,defect_traj] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func
         ufunc = @(t) ubar(:,k);
 
         % Ensure that the integration step is not too small
-        h_step = max((1/40)*diff(tspan),h);        
+        % h_step = max((1/40)*diff(tspan),h(k));   
+        h_step = h(k);       
         
         if nargin == 8
-           [~,z_] = disc.rk4_march(@(t,z,u,p) zoh_ode(t,z,u,p,func,func_linz,nx,nx2,varargin{1}),tspan,zk,h_step,ufunc,pbar);
+            [~,z_tmp] = feval(varargin{1},@(t,z) zoh_ode(t,z,ufunc(t),pbar,func,func_linz,nx,nx2),tspan,zk);
+            z_ = z_tmp';
         elseif nargin == 7
             [~,z_] = disc.rk4_march(@(t,z,u,p) zoh_ode(t,z,u,p,func,func_linz,nx,nx2),tspan,zk,h_step,ufunc,pbar);
         else
-            error("Incorrect no. of arguments for compute_foh.")
+            error("Incorrect no. of arguments for compute_zoh.");
         end
         zkp1 = z_(:,end);
         
@@ -68,37 +74,22 @@ function [Ak,Bk,Sk,wk,defect_traj] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func
 
 end
 
-function f = zoh_ode(t,z,u,p,func,func_linz,nx,nx2,varargin)
+function f = zoh_ode(t,z,u,p,func,func_linz,nx,nx2)
 % z = [x;PhiA(:);Btil(:);Stil(:);wtil];
 % p = param
-% varargin{1} : structure containing system parameters (optional)
-
-    flg = false;
-    if length(varargin)==1
-        sys_struct = varargin{1};
-        flg = true;
-    end
     
     x = z(1:nx);
     param = p;
     PhiA = reshape(z(nx+1:nx+nx2),[nx,nx]);
     PhiAinv = PhiA\eye(nx);
     
-    if flg
-        [A,B,S,w] = func_linz(t,x,u,param,sys_struct);
-    else
-        [A,B,S,w] = func_linz(t,x,u,param);
-    end
+    [A,B,S,w] = func_linz(t,x,u,param);
     
     f1 = A*PhiA;
     f2 = PhiAinv*B;
     f3 = PhiAinv*S;
     f4 = PhiAinv*w;
     
-    if flg
-        f = [func(t,x,u,param,sys_struct);f1(:);f2(:);f3(:);f4];
-    else
-        f = [func(t,x,u,param);f1(:);f2(:);f3(:);f4];    
-    end
+    f = [func(t,x,u,param);f1(:);f2(:);f3(:);f4];    
 
 end

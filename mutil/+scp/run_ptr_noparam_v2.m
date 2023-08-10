@@ -62,7 +62,11 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
         if prb.disc == "FOH"
             % Propagation
             tic
-            [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if isfield(prb,'ode_solver')
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            end
             propagate_time = toc*1000;
 
             for k = 1:K-1
@@ -76,7 +80,11 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
         elseif prb.disc == "ZOH"
             % Propagation
             tic
-            [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if isfield(prb,'ode_solver')
+                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            end
             propagate_time = toc*1000;
 
             for k = 1:K-1
@@ -100,12 +108,16 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
         obj_fun = Jvc + prb.wtr*sum(Jtr) + cost_fun;            
         
         % Solve
+        % Model = export(cnstr,obj_fun,prb.solver_settings); % Export input to solver from YALMIP        
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings);
         % assert(ismember(yalmip_out.problem,[0,3]),"Subproblem is unsolved.\nSolver message: %s",yalmiperror(yalmip_out.problem));
-        if ~ismember(yalmip_out.problem,[0,3])
+        if ~ismember(yalmip_out.problem,[0,4])
             fprintf("+------------------------------------------------------------------------------------------------------+\n");
             fprintf('Subproblem is unsolved. Returning the previous iterate.\n'); 
             break
+        end
+        if yalmip_out.problem == 4
+            warning("Solver numerical issues.");
         end
         
         % Post process
@@ -121,7 +133,6 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
             % Virtual control penalty            
             vc_term = vc_term + sum(value(vc_plus(:,k)) + value(vc_minus(:,k)));
         end        
-
 
         % Ensure that the TR value is always displayed consistently with 2-norm
         % Note that this is for display and for evaluation of termination criteria 

@@ -17,15 +17,8 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
     fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   | log(VC cnstr.) |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
-
-    % Varying trust-region and virtual control weights
-    % wvc_vec = linspace(prb.wvc,prb.wvc/5,prb.scp_iters);
-    % wtr_vec = linspace(prb.wtr,15*prb.wtr,prb.scp_iters);
     
     for j = 1:prb.scp_iters
-
-        % prb.wvc = wvc_vec(j);
-        % prb.wtr = wtr_vec(j);
         
         yalmip clear
 
@@ -67,7 +60,11 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         if prb.disc == "FOH"
             % Propagation
             tic
-            [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if isfield(prb,'ode_solver')
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            end
             propagate_time = toc*1000;
 
             for k = 1:K-1
@@ -81,7 +78,11 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         elseif prb.disc == "ZOH"
             % Propagation
             tic
-            [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if isfield(prb,'ode_solver')
+                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            end
             propagate_time = toc*1000;
 
             for k = 1:K-1

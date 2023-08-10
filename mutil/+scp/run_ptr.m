@@ -17,15 +17,8 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
     fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+\n");
-    
-    % Varying trust-region and virtual control weights
-    % wvc_vec = linspace(prb.wvc,prb.wvc/5,prb.scp_iters);
-    % wtr_vec = linspace(prb.wtr,15*prb.wtr,prb.scp_iters);
 
     for j = 1:prb.scp_iters
-
-        % prb.wvc = wvc_vec(j);
-        % prb.wtr = wtr_vec(j);     
         
         yalmip clear
 
@@ -70,10 +63,13 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
 
         % Linearized dynamics constraint
         if prb.disc == "FOH"
-
             % Propagation
             tic
-            [Ak,Bmk,Bpk,Sk,wk] = feval("disc.compute_foh_"+foh_type,prb.tau,xbar,ubar,pbar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if isfield(prb,'ode_solver')
+                [Ak,Bmk,Bpk,Sk,wk] = feval("disc.compute_foh_"+foh_type,prb.tau,xbar,ubar,pbar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else 
+                [Ak,Bmk,Bpk,Sk,wk] = feval("disc.compute_foh_"+foh_type,prb.tau,xbar,ubar,pbar,prb.h,prb.dyn_func,prb.dyn_func_linearize);    
+            end
             propagate_time = toc*1000;
 
             for k = 1:K-1
@@ -88,7 +84,11 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         elseif prb.disc == "ZOH"
             % Propagation
             tic
-            [Ak,Bk,Sk,wk] = disc.compute_zoh(prb.tau,xbar,ubar,pbar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if isfield(prb,'ode_solver')
+                [Ak,Bk,Sk,wk] = disc.compute_zoh(prb.tau,xbar,ubar,pbar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,Bk,Sk,wk] = disc.compute_zoh(prb.tau,xbar,ubar,pbar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            end
             propagate_time = toc*1000;
 
             for k = 1:K-1
@@ -112,12 +112,16 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         obj_fun = prb.wvc*sum(Jvc) + prb.wtr*sum(Jtr) + cost_fun;            
         
         % Solve
+        % Model = export(cnstr,obj_fun,prb.solver_settings); % Export input to solver from YALMIP        
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings); 
         % assert(ismember(yalmip_out.problem,[0,3]),"Subproblem is unsolved.\nSolver message: %s",yalmiperror(yalmip_out.problem));
-        if ~ismember(yalmip_out.problem,[0,3])
-            fprintf("+-------------------------------------------------------------------------------------+\n");
+        if ~ismember(yalmip_out.problem,[0,4])
+            fprintf("+------------------------------------------------------------------------------------------------------+\n");
             fprintf('Subproblem is unsolved. Returning the previous iterate.\n'); 
             break
+        end
+        if yalmip_out.problem == 4
+            warning("Solver numerical issues.");
         end
 
         % Post process
