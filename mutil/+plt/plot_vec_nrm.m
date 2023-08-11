@@ -1,6 +1,6 @@
 function plot_vec_nrm(tvec,v,vbnd,norm_type,title_str,varargin)
 % Plot the norm of vector-valued signal
-    if nargin == 7 % Caution: plot line can be set only after setting ax.YScale
+    if nargin >= 7 % Caution: plot line can be set only after setting ax.YScale
         line_color = varargin{2};
     else
         line_color = [0,0.2,0.7];
@@ -12,10 +12,10 @@ function plot_vec_nrm(tvec,v,vbnd,norm_type,title_str,varargin)
     end
     if nargin == 8
         display_name = varargin{3};
-        plot(tvec,nrm_v,'.-','Color',line_color,'DisplayName',display_name);
+        plot(tvec,nrm_v,'-','Color',line_color,'DisplayName',display_name);
         legend('AutoUpdate','off');
     else
-        plot(tvec,nrm_v,'.-','Color',line_color)        
+        plot(tvec,nrm_v,'-','Color',line_color)        
     end    
     hold on
     if length(vbnd) == 2
@@ -28,7 +28,7 @@ function plot_vec_nrm(tvec,v,vbnd,norm_type,title_str,varargin)
     end
     title(title_str);
     xlim([0,tvec(end)]);
-    if nargin == 6
+    if nargin >= 6
         ax = gca;
         ax.YScale = varargin{1};
     end
