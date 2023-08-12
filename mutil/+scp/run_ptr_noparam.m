@@ -126,7 +126,11 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         u = value(u);
         cost_val = value(cost_fun);
         vc_term = value(Jvc);
-        vc_constr_term = value(vc_constr_term);
+        if isfield(prb,'wvb')
+            vc_constr_term = value(vc_constr_term)/prb.wvb;
+        else
+            vc_constr_term = value(vc_constr_term)/prb.wvc;
+        end
 
         % Ensure that the TR value is always displayed consistently with 2-norm
         % Note that this is for display and for evaluation of termination criteria 

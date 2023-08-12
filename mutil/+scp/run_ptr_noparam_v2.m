@@ -127,7 +127,11 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
         u = value(u);
         cost_val = value(cost_fun);
         vc_term = 0;
-        vc_constr_term = value(vc_constr_term);
+        if isfield(prb,'wvb')
+            vc_constr_term = value(vc_constr_term)/prb.wvb;
+        else
+            vc_constr_term = value(vc_constr_term)/prb.wvc;
+        end
 
         for k = 1:K-1
             % Virtual control penalty            

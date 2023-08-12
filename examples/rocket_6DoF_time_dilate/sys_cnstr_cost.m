@@ -1,4 +1,4 @@
-function [cnstr,cost_fun] = sys_cnstr_cost(x,u,~,prb,...
+function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,~,prb,...
                                            ~,ubar,~)
 % m     = x(1)
 % rI    = x(2:4)
@@ -29,20 +29,26 @@ function [cnstr,cost_fun] = sys_cnstr_cost(x,u,~,prb,...
 
     cost_fun = 0;
 
+    vb_Tmin = sdpvar(1,K);
+
     for k = 1:K 
         cnstr = [cnstr;
-                 m(k) >= prb.mdry;                                          % Vehicle mass lower bound
-                 norm(prb.Hgam*rI(:,k)) <= rI(1,k)/prb.cotgamgs;            % Glide slope constraint
-                 norm(prb.Hthet*qBI(:,k)) <= prb.sinthetmaxby2;            % Vehicle tilt angle constraint
-                 norm(omgB(:,k)) <= prb.omgmax;                             % Angular velocity magnitude upper bound  
-                 norm(TB(:,k)) <= prb.Tmax;                                 % Thrust magnitude upper bound      
-                 prb.cosdelmax*norm(TB(:,k)) <= TB(1,k);                    % Thrust pointing constraint 
-                 norm(vI(:,k)) <= prb.Vmax;                                 % Speed upper bound
-                 TB(:,k)'*(-ubar(:,k)/norm(ubar(:,k))) + prb.Tmin <= 0;     % Linearized thrust magnitude lower bound
-                 ];
+                 m(k) >= prb.mdry;                                                      % Vehicle mass lower bound
+                 norm(prb.Hgam*rI(:,k)) <= rI(1,k)/prb.cotgamgs;                        % Glide slope constraint
+                 norm(prb.Hthet*qBI(:,k)) <= prb.sinthetmaxby2;                         % Vehicle tilt angle constraint
+                 norm(omgB(:,k)) <= prb.omgmax;                                         % Angular velocity magnitude upper bound  
+                 norm(TB(:,k)) <= prb.Tmax;                                             % Thrust magnitude upper bound      
+                 prb.cosdelmax*norm(TB(:,k)) <= TB(1,k);                                % Thrust pointing constraint 
+                 norm(vI(:,k)) <= prb.Vmax;                                             % Speed upper bound
+                 TB(:,k)'*(-ubar(:,k)/norm(ubar(:,k))) + prb.Tmin <= vb_Tmin(k);        % Linearized thrust magnitude lower bound
+                 vb_Tmin(k) >= 0];
         
         cost_fun = cost_fun + prb.cost_factor*norm(u(:,k));
     
     end  
+
+    vcvb_cnstr = prb.wvc*sum(vb_Tmin(:)); % Slack for exactly penalized constraint
+
+    cost_fun = cost_fun + vcvb_cnstr;
 
 end

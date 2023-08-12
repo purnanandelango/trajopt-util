@@ -12,11 +12,11 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         foh_type = "v3";
     end
     
-    fprintf("+-------------------------------------------------------------------------------------+\n");
-    fprintf("|                          ..:: Penalized Trust Region ::..                           |\n");
-    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+\n");
-    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   |\n");
-    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+\n");
+    fprintf("+------------------------------------------------------------------------------------------------------+\n");
+    fprintf("|                                   ..:: Penalized Trust Region ::..                                   |\n");
+    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
+    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   | log(VC cnstr.) |\n");
+    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
 
     for j = 1:prb.scp_iters
         
@@ -103,8 +103,8 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         end        
 
         % Constraints
-        [cnstr_sys,cost_fun] = sys_constr_cost_fun(x,u,p,prb,...
-                                                   xbar,ubar,pbar);
+        [cnstr_sys,cost_fun,vc_constr_term] = sys_constr_cost_fun(x,u,p,prb,...
+                                                                  xbar,ubar,pbar);
         
         cnstr = [cnstr;cnstr_sys];
         
@@ -132,6 +132,11 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         p = value(p);
         cost_val = value(cost_fun);
         vc_term = sum(value(Jvc));
+        if isfield(prb,'wvb')
+            vc_constr_term = value(vc_constr_term)/prb.wvb;
+        else
+            vc_constr_term = value(vc_constr_term)/prb.wvc;
+        end
         
         % Ensure that the TR value is always displayed consistently with 2-norm
         % Note that this is for display and for evaluation of termination criteria 
@@ -160,11 +165,11 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         ToF = prb.time_of_maneuver(xbar,ubar,pbar);
         
         % Console output
-        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %8.1e | %7.1e |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF)
+        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %8.1e | %7.1e |    %5.1f       |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF,log10(vc_constr_term))
         
         if vc_term < prb.epsvc && tr_term < prb.epstr
             converged = true;
-            fprintf("+-------------------------------------------------------------------------------------+\n");            
+            fprintf("+------------------------------------------------------------------------------------------------------+\n")
             fprintf('Converged!\n') 
             break
         end

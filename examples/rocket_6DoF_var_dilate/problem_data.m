@@ -10,8 +10,8 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.dtau = diff(prb.tau);
     
-    prb.h = (1/10)*min(prb.dtau);            % Step size for integration that computes FOH matrices
-    prb.Kfine = 1+round(2/min(prb.dtau));   % Size of grid on which SCP solution is simulated
+    prb.h = (1/10)*prb.dtau;                % Step size for integration that computes FOH matrices
+    prb.Kfine = 1+round(10/min(prb.dtau));   % Size of grid on which SCP solution is simulated
     
     % System parameters
 
@@ -36,84 +36,79 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     % Bounds
 
-    prb.thetmax = 45*pi/180; prb.sinthetmaxby2 = sin(prb.thetmax/2);
-    prb.gamgs = 75*pi/180;   prb.cotgamgs = cot(prb.gamgs);
+    prb.thetmax = 90*pi/180;    prb.sinthetmaxby2 = sin(prb.thetmax/2);     % Vehicle tilt
+    prb.gamgs   = 75*pi/180;    prb.cotgamgs = cot(prb.gamgs);              % Glide-slope
     
-    prb.omgmax = 28.6*pi/180;
-    prb.delmax = 20*pi/180; prb.cosdelmax = cos(prb.delmax);
+    prb.omgmax  = 28.6*pi/180;                                              % Angular velocity
+    prb.delmax  = 20*pi/180;    prb.cosdelmax = cos(prb.delmax);            % Gimbal
     
-    prb.Hgam = [0,1,0;0,0,1];
-    prb.Hthet = [0,1,0,0;0,0,1,0];
+    prb.Hgam    = [0,1,0;0,0,1];
+    prb.Hthet   = [0,1,0,0;0,0,1,0];
     
-    prb.Tmin = 1;
-    prb.Tmax = 6.5;
+    prb.Tmin    = 1.5;
+    prb.Tmax    = 6.5;
     
-    prb.Vmax = 3;
+    prb.Vmax     = 3;
     
-    prb.mdry = 1;
-    prb.mwet = 2;
+    prb.Vmax_STC    = 1.5;
+    prb.cosaoamax   = cosd( 3 ); 
+    prb.STC_flag    = "v1";
 
-    prb.smin = 0.01;
-    prb.smax = 10;
-    prb.dtmin = 0.01;
-    prb.dtmax = 2;
-    prb.ToFmax = 20;
+    prb.mdry    = 1;
+    prb.mwet    = 2;
+
+    prb.smin    = 0.01;
+    prb.smax    = 20;
+    prb.dtmin   = 0.01;
+    prb.dtmax   = 3;
+    prb.ToFmax  = 20;
+   
+    prb.snom    = [1,20];
+    prb.ToFguess= 5;    
     
     % Boundary conditions
 
-    prb.rI1 = [5.33;6.5;0];
-    prb.vI1 = [-0.5;-2.5;0];
-    % prb.vI1 = [-2.5;-0.5;0];
+    prb.rI1     = [5.5;4.5;0];
+    prb.vI1     = [-0.5;-2.5;0];
+    % prb.vI1    = [-2.5;-0.5;0];
     
-    prb.rIK = zeros(3,1);
-    prb.vIK = -0.1*[1;0;0];
-    prb.omgB1 = zeros(3,1);
-    prb.omgBK = prb.omgB1;
-    prb.q1 = [0;0;0;1];
+    prb.rIK     = zeros(3,1);
+    prb.vIK     = -0.1*[1;0;0];
+    prb.omgB1   = zeros(3,1);
+    prb.omgBK   = prb.omgB1;
+    prb.q1      = [0;0;0;1];
 
-    prb.x1 = [prb.mwet;prb.rI1;prb.vI1;prb.q1;prb.omgB1];
-    prb.xK = [prb.mdry;prb.rIK;prb.vIK;prb.q1;prb.omgBK];    
-    prb.u1 = [-prb.mwet*prb.gI;5/K];
-    prb.uK = [-prb.mdry*prb.gI;5/K];
+    % Generate straight-line initialization (unscaled)
+    prb.x1      = [prb.mwet;prb.rI1;prb.vI1;prb.q1;prb.omgB1];
+    prb.xK      = [prb.mdry;prb.rIK;prb.vIK;prb.q1;prb.omgBK];    
+    prb.u1      = [-prb.mwet*prb.gI;prb.ToFguess];
+    prb.uK      = [-prb.mdry*prb.gI;prb.ToFguess];
 
     % Scaling parameters
-    xmin1 = [1;   0;  0; -1; -2*ones(3,1); -ones(4,1); -prb.omgmax*ones(3,1)];
-    xmax1 = [2;   7;  7;  1;  2*ones(3,1);  ones(4,1);  prb.omgmax*ones(3,1)];
-
-    xminK = [1;   0;  0; -1; -2*ones(3,1); -ones(4,1); -prb.omgmax*ones(3,1)];
-    xmaxK = [2;   7;  7;  1;  2*ones(3,1);  ones(4,1);  prb.omgmax*ones(3,1)];
+    xmin = [prb.mdry; -10*ones(3,1); -2*ones(3,1); -ones(4,1); -prb.omgmax*ones(3,1)];
+    xmax = [prb.mwet;  10*ones(3,1);  2*ones(3,1);  ones(4,1);  prb.omgmax*ones(3,1)];
     
-    umin1 = [1*ones(3,1); 1];
-    umax1 = [6*ones(3,1); 15];
+    umin = [prb.Tmin*ones(3,1); prb.snom(1)];
+    umax = [prb.Tmax*ones(3,1); prb.snom(2)];
 
-    uminK = [1*ones(3,1); 5];
-    umaxK = [6*ones(3,1); 10];    
+    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax]},[0,1]);
 
-    xmin  = grid.ends2interp(xmin1,xminK,prb.tau,'poly',1);
-    xmax  = grid.ends2interp(xmax1,xmaxK,prb.tau,'poly',1);
-    xbnd  = linalg.matcat(xmin,xmax,3);
-
-    umin  = grid.ends2interp(umin1,uminK,prb.tau,'poly',1);
-    umax  = grid.ends2interp(umax1,umaxK,prb.tau,'poly',1);
-    ubnd  = linalg.matcat(umin,umax,3);
-
-    [Sz,cz] = misc.generate_varscaling({xbnd,ubnd},[-1,1]);
-
-    prb.Sx = Sz(:,1);
-    prb.Su = Sz(:,2);
-    prb.cx = cz(:,1);
-    prb.cu = cz(:,2);
-    prb.invSx = cellfun(@inv,prb.Sx,'UniformOutput',false);
-    prb.invSu = cellfun(@inv,prb.Su,'UniformOutput',false);
+    prb.Sx = Sz{1}; prb.invSx = inv(Sz{1});
+    prb.Su = Sz{2}; prb.invSu = inv(Sz{2});
+    prb.cx = cz{1};
+    prb.cu = cz{2};
 
     % SCP parameters
 
     prb.disc = "FOH";
     prb.foh_type = "v3";
+    % prb.ode_solver = 'ode45';
     prb.scp_iters = scp_iters; % Maximum SCP iterations
+    
 
+    prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
     % prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-9);
-    prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
+    % prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
 
     prb.tr_norm = 2;
     % prb.tr_norm = inf;
