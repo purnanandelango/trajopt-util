@@ -130,7 +130,7 @@ function [xbar,ubar,converged] = run_ptr_noparam_v2(xbar,ubar,prb,sys_constr_cos
         if isfield(prb,'wvb')
             vc_constr_term = value(vc_constr_term)/prb.wvb;
         else
-            vc_constr_term = value(vc_constr_term)/prb.wvc;
+            vc_constr_term = value(vc_constr_term)/max(prb.Wvc(:));
         end
 
         for k = 1:K-1
