@@ -11,7 +11,7 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
 %                   func(x,u)
 %   func_linz     : linearization of rhs of system ODE 
 %                   [A,B,w] = func_linz(x,u)
-%   varargin{1}   : specify in-built MATLAB ode solver      (optional)
+%   varargin{1}   : specify in-built MATLAB ode solver and its options (optional)
 %
 %   Ak            : nx x nx x N-1 
 %   Bmk           : nx x nu x N-1 
@@ -48,7 +48,7 @@ function [Ak,Bmk,Bpk,wk,defect_traj] = compute_foh_noparam_v3(tbar,xbar,ubar,h,f
         h_step = h(k);
         
         if nargin == 7
-            [~,z_tmp] = feval(varargin{1},@(t,z) foh_ode(t,z,ufunc(t),tspan,func,func_linz,nx,nu,nx2,nxnu),tspan,zk);
+            [~,z_tmp] = feval(varargin{1}{1},@(t,z) foh_ode(t,z,ufunc(t),tspan,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,varargin{1}{2});
             z_ = z_tmp';
         elseif nargin == 6
             [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,h_step,ufunc,tspan);

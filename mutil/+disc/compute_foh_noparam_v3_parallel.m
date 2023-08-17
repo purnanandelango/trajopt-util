@@ -12,7 +12,7 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
     %                   func(x,u)
     %   func_linz     : linearization of rhs of system ODE 
     %                   [A,B,w] = func_linz(x,u)
-    %   varargin{1}   : specify in-built MATLAB ode solver (optional)
+    %   varargin{1}   : specify in-built MATLAB ode solver and its options (optional)
     %
     %   Ak            : nx x nx x N-1 
     %   Bmk           : nx x nu x N-1 
@@ -47,7 +47,8 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
         end
 
         if nargin == 7
-            solver_name = varargin{1};            
+            solver_name = varargin{1}{1};            
+            solver_options = varargin{1}{2};
 
             parfor k = 1:N-1
                 zk = [xbar(:,k);ABmBpw_init];
@@ -55,7 +56,7 @@ function [Ak,Bmk,Bpk,wk] = compute_foh_noparam_v3_parallel(tbar,xbar,ubar,h,func
                 % [~,z_] = disc.rk4_march(@(t,z,u,p) foh_ode(t,z,u,p,func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk,h(k),ufunc{k},tspan{k});
                 % zkp1 = z_(:,end);
 
-                [~,z_tmp] = feval(solver_name,@(t,z) foh_ode(t,z,ufunc{k}(t),tspan{k},func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk);
+                [~,z_tmp] = feval(solver_name,@(t,z) foh_ode(t,z,ufunc{k}(t),tspan{k},func,func_linz,nx,nu,nx2,nxnu),tspan{k},zk,solver_options);
                 z_ = z_tmp'; 
                 zkp1 = z_(:,end);               
                 

@@ -12,7 +12,7 @@ function [Ak,Bk,Sk,wk,defect_traj] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func
 %                   func(x,u,p)
 %   func_linz     : linearization of rhs of system ODE 
 %                   [A,B,S,w] = func_linz(x,u,p)
-%   varargin{1}   : specify in-built MATLAB ode solver (optional)
+%   varargin{1}   : specify in-built MATLAB ode solver and its options (optional)
 %
 %   Ak            : nx x nx x N-1 
 %   Bk            : nx x nu x N-1 
@@ -51,7 +51,7 @@ function [Ak,Bk,Sk,wk,defect_traj] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func
         h_step = h(k);       
         
         if nargin == 8
-            [~,z_tmp] = feval(varargin{1},@(t,z) zoh_ode(t,z,ufunc(t),pbar,func,func_linz,nx,nx2),tspan,zk);
+            [~,z_tmp] = feval(varargin{1}{1},@(t,z) zoh_ode(t,z,ufunc(t),pbar,func,func_linz,nx,nx2),tspan,zk,varargin{1}{2});
             z_ = z_tmp';
         elseif nargin == 7
             [~,z_] = disc.rk4_march(@(t,z,u,p) zoh_ode(t,z,u,p,func,func_linz,nx,nx2),tspan,zk,h_step,ufunc,pbar);

@@ -4,7 +4,7 @@ function [sol_t,sol_x,sol_u] = simulate_dyn(x0,ucell,dyn_func,tspan,N,disc_flg,v
 %   x0 is initial condition
 %   ucell = {tvec,uvec}
 %   The control inputs uvec defined at discrete nodes tvec are interpolated according to flag disc_flg \in {"FOH","ZOH"}
-%   Optional argument to specify in-built MATLAB ode solver
+%   Optional argument to specify in-built MATLAB ode solver and options
     tvec = ucell{1};
     uvec = ucell{2};
 
@@ -15,7 +15,7 @@ function [sol_t,sol_x,sol_u] = simulate_dyn(x0,ucell,dyn_func,tspan,N,disc_flg,v
     end
 
     if nargin == 7
-        [sol_t,sol_x] = feval(varargin{1},@(t,x) dyn_func(t,x,u_func(t)),linspace(tspan(1),tspan(2),N),x0);
+        [sol_t,sol_x] = feval(varargin{1}{1},@(t,x) dyn_func(t,x,u_func(t)),linspace(tspan(1),tspan(2),N),x0,varargin{1}{2});
         sol_t = sol_t';
         sol_x = sol_x';
     else
