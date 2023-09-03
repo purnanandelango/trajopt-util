@@ -50,8 +50,8 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     prb.Vmax     = 3;
     
-    prb.Vmax_STC    = 1.5;
-    prb.cosaoamax   = cosd( 3 ); 
+    prb.Vmax_STC    =  2;
+    prb.cosaoamax   = cosd( 5 ); 
     prb.STC_flag    = "v1";
 
     prb.mdry    = 1;
@@ -106,8 +106,8 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.scp_iters = scp_iters; % Maximum SCP iterations
     
 
-    prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
-    % prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-9);
+    % prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
+    prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-9);
     % prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
 
     prb.tr_norm = 2;
