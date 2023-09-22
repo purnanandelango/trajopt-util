@@ -15,7 +15,7 @@ function [sol_t,sol_x,sol_u] = simulate_dyn(x0,ucell,dyn_func,tspan,N,disc_flg,v
     end
 
     if nargin == 7
-        [sol_t,sol_x] = feval(varargin{1}{1},@(t,x) dyn_func(t,x,u_func(t)),linspace(tspan(1),tspan(2),N),x0,varargin{1}{2});
+        [sol_t,sol_x] = feval(varargin{1}{1},@(t,x) dyn_func(t,x,u_func(t)),linspace(tspan(1),tspan(end),N),x0,varargin{1}{2});
         sol_t = sol_t';
         sol_x = sol_x';
     else
