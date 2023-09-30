@@ -19,11 +19,11 @@ function plot_vec_nrm(tvec,v,vbnd,norm_type,title_str,varargin)
     end    
     hold on
     if length(vbnd) == 2
-        plot(tvec,vbnd(1)*ones(1,K),'-r')
-        plot(tvec,vbnd(2)*ones(1,K),'-r')
+        plot(tvec,vbnd(1)*ones(1,K),'--r')
+        plot(tvec,vbnd(2)*ones(1,K),'--r')
         ylim([0.5*min(vbnd),1.1*max(vbnd)]);
     else
-        plot(tvec,vbnd*ones(1,K),'-r')
+        plot(tvec,vbnd*ones(1,K),'--r')
         ylim([0,1.1*vbnd]);
     end
     title(title_str);
