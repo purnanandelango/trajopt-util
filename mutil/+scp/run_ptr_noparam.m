@@ -124,7 +124,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         parse_time = yalmip_out.yalmiptime*1000;            
         x = value(x);
         u = value(u);
-        cost_val = value(cost_fun);
+        cost_val = value(cost_fun)/prb.cost_factor;
         vc_term = value(Jvc);
         if isfield(prb,'wvb')
             vc_constr_term = value(vc_constr_term)/prb.wvb;

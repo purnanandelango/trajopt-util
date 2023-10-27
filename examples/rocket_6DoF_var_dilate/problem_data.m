@@ -102,12 +102,12 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.disc = "FOH";
     prb.foh_type = "v3";
-    % prb.ode_solver = 'ode45';
+    prb.ode_solver = {'ode45',odeset('RelTol',1e-5,'AbsTol',1e-7)};
     prb.scp_iters = scp_iters; % Maximum SCP iterations
     
 
     % prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
-    prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-9);
+    prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-8);
     % prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
 
     prb.tr_norm = 2;

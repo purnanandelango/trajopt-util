@@ -11,6 +11,7 @@ nplot = 4;
 % Trajectory, vehicle axis, thrust vector and drag
 subplot(mplot,nplot,[1,2,5,6])
 plant.rocket6DoF.plot_vehicle_forces(u,rI,vI,qBI,0.4,0.2,struct('scl',0.4,'rho',prb.rho,'SA',prb.SA,'CA',prb.CA),{[2,3,1],{'y','z','x'},'x'});
+grid on
 
 % Thrust
 subplot(mplot,nplot,[3,4])
