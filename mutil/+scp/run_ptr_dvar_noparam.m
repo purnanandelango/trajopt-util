@@ -32,12 +32,6 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
 
         x = dx + prb.invSx*xbar;
         u = du + prb.invSu*ubar;
-        % x = sdpvar(prb.nx,K);
-        % u = sdpvar(prb.nu,K);
-        % for k = 1:K
-        %     x(:,k) = dx(:,k) + prb.invSx*xbar(:,k);
-        %     u(:,k) = du(:,k) + prb.invSu*ubar(:,k);
-        % end
         
         Jvc = 0;
         cnstr = [];

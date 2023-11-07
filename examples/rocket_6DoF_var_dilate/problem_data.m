@@ -61,10 +61,10 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.smax    = 20;
     prb.dtmin   = 0.01;
     prb.dtmax   = 3;
-    prb.ToFmax  = 20;
+    prb.ToFmax  = 15;
    
     prb.snom    = [1,20];
-    prb.ToFguess= 5;    
+    prb.ToFguess= 05;    
     
     % Boundary conditions
 

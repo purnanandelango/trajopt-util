@@ -9,13 +9,13 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,prb,...
     K = prb.K;
 
     % Unscaled variables
-    m    = sdpvar(1,K);
-    rI   = sdpvar(3,K);
-    vI   = sdpvar(3,K);
-    qBI  = sdpvar(4,K);
-    omgB = sdpvar(3,K);
-    TB   = sdpvar(3,K);
-    s    = sdpvar(1,K);
+    % m    = sdpvar(1,K);
+    % rI   = sdpvar(3,K);
+    % vI   = sdpvar(3,K);
+    % qBI  = sdpvar(4,K);
+    % omgB = sdpvar(3,K);
+    % TB   = sdpvar(3,K);
+    % s    = sdpvar(1,K);
 
     for k = 1:K
         m(k)      = prb.Sx(1,1)          *x(1,k)     + prb.cx(1);
@@ -63,9 +63,10 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,prb,...
         %          h + dh*(prb.Sx*x(:,k)+prb.cx-xbar(:,k)) <= vb_STC(k);
         %          vb_STC(k) >= 0];
         
-        cost_fun = cost_fun + prb.cost_factor*(norm(u(1:3,k)));
+        % cost_fun = cost_fun + prb.cost_factor*(norm(u(1:3,k)));
     
     end  
+    cost_fun = cost_fun + prb.cost_factor*x(1,K);    
 
     % Compute time of maneuver and constrain time step
     ToF = 0;
