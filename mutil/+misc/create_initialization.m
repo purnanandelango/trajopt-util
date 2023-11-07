@@ -19,7 +19,7 @@ function [xbar,ubar,pbar] = create_initialization(prb,flg,varargin)
             % If the indices of the quaternions are known, then perform SLERP using q_lib/q_slerp
             if isfield(prb,'quaternion_idx')
                 for k = 1:K
-                    xbar(prb.quaternion_idx,k) = q_slerp(prb.x1(prb.quaternion_idx),prb.xK(prb.quaternion_idx),prb.tau(k));
+                    xbar(prb.quaternion_idx,k) = qlib.q_slerp(prb.x1(prb.quaternion_idx),prb.xK(prb.quaternion_idx),prb.tau(k));
                 end
             end
 

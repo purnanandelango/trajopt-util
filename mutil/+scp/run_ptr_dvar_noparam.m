@@ -1,6 +1,7 @@
-function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun,varargin)
+function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_cost_fun,varargin)
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
 % Provision for updating problem parameters after each SCP iteration
+% Scaling terms cx and cu are not used
 
     converged = false;
     K = prb.K;
@@ -8,7 +9,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
     % Check if type of FOH computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
-        assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
+        assert(ismember(foh_type,["v1","v2","v3"]),"Incorrect type of FOH discretization.");        
     else
         foh_type = "v3"; % Default
     end
@@ -24,10 +25,19 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         yalmip clear
 
         % Variables
-        x = sdpvar(prb.nx,K);
-        u = sdpvar(prb.nu,K);
+        dx = sdpvar(prb.nx,K);
+        du = sdpvar(prb.nu,K);
         vc_minus = sdpvar(prb.nx,K-1);
         vc_plus = sdpvar(prb.nx,K-1);
+
+        x = dx + prb.invSx*xbar;
+        u = du + prb.invSu*ubar;
+        % x = sdpvar(prb.nx,K);
+        % u = sdpvar(prb.nu,K);
+        % for k = 1:K
+        %     x(:,k) = dx(:,k) + prb.invSx*xbar(:,k);
+        %     u(:,k) = du(:,k) + prb.invSu*ubar(:,k);
+        % end
         
         Jvc = 0;
         cnstr = [];
@@ -44,16 +54,12 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
             case {2,inf}
                 Jtr = sdpvar(1,K);        
                 for k = 1:K
-                    zbar_scl = [prb.invSx*(xbar(:,k)-prb.cx);
-                                prb.invSu*(ubar(:,k)-prb.cu)];                    
-                    cnstr = [cnstr; norm([x(:,k);u(:,k)]-zbar_scl,prb.tr_norm) <= Jtr(k)]; 
+                    cnstr = [cnstr; norm([dx(:,k);du(:,k)],prb.tr_norm) <= Jtr(k)]; 
                 end                
             case 'quad'
                 Jtr = 0;        
                 for k = 1:K
-                    zbar_scl = [prb.invSx*(xbar(:,k)-prb.cx);
-                                prb.invSu*(ubar(:,k)-prb.cu)];
-                    Jtr = Jtr + ([x(:,k);u(:,k)]-zbar_scl)'*([x(:,k);u(:,k)]-zbar_scl);
+                    Jtr = Jtr + ([dx(:,k);du(:,k)])'*([dx(:,k);du(:,k)]);
                 end                
         end
 
@@ -62,36 +68,36 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bmk,Bpk,wk,~] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bmk,Bpk,~,~,xbarprop] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                [Ak,Bmk,Bpk,~,~,xbarprop] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
             propagate_time = toc*1000;
 
             for k = 1:K-1
                 cnstr = [cnstr;
-                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
-                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                           prb.invSx*Bmk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
-                                                           prb.invSx*Bpk(:,:,k)*(prb.Su*u(:,k+1)+prb.cu) +...
-                                                           prb.invSx*wk(:,k)];
+                         vc_minus(:,k) - vc_plus(:,k) == - dx(:,k+1) ...
+                                                           prb.invSx*Ak(:,:,k)*prb.Sx*dx(:,k) +...
+                                                           prb.invSx*Bmk(:,:,k)*prb.Su*du(:,k) +...
+                                                           prb.invSx*Bpk(:,:,k)*prb.Su*du(:,k+1) +...
+                                                           prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1))];
             end                        
         elseif prb.disc == "ZOH"
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bk,~,~,xbarprop] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                [Ak,Bk,~,~,xbarprop] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
             propagate_time = toc*1000;
 
             for k = 1:K-1
                 cnstr = [cnstr;
-                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
-                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                           prb.invSx*Bk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
-                                                           prb.invSx*wk(:,k)];
+                         vc_minus(:,k) - vc_plus(:,k) == - dx(:,k+1) ...
+                                                           prb.invSx*Ak(:,:,k)*prb.Sx*dx(:,k) +...
+                                                           prb.invSx*Bk(:,:,k)*prb.Su*du(:,k) +...
+                                                           prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1))];
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];             
         end
@@ -122,8 +128,10 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         % Post process
         solve_time = yalmip_out.solvertime*1000;
         parse_time = yalmip_out.yalmiptime*1000;            
-        x = value(x);
-        u = value(u);
+        % x = value(x);
+        % u = value(u);
+        dx = value(dx);
+        du = value(du);
         cost_val = value(cost_fun)/prb.cost_factor;
         vc_term = value(Jvc);
         if isfield(prb,'wvb')
@@ -140,17 +148,15 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
             case {'quad',inf}
                 Jtr_post_solve = zeros(1,K);        
                 for k = 1:K
-                    zbar_scl = [prb.invSx*(xbar(:,k)-prb.cx);
-                                prb.invSu*(ubar(:,k)-prb.cu)];                    
-                    Jtr_post_solve(k) = norm([x(:,k);u(:,k)]-zbar_scl,2);        
+                    Jtr_post_solve(k) = norm([dx(:,k);du(:,k)],2);        
                 end
                 tr_term = sum(Jtr_post_solve);
         end
 
         % Update reference trajectory
         for k = 1:prb.K
-            xbar(:,k) = prb.Sx*x(:,k) + prb.cx;
-            ubar(:,k) = prb.Su*u(:,k) + prb.cu;
+            xbar(:,k) = prb.Sx*dx(:,k) + xbar(:,k);
+            ubar(:,k) = prb.Su*du(:,k) + ubar(:,k);
         end        
 
         ToF = prb.time_of_maneuver(xbar,ubar);        

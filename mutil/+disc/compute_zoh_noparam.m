@@ -1,4 +1,4 @@
-function [Ak,Bk,wk,defect_traj] = compute_zoh_noparam(tbar,xbar,ubar,h,func,func_linz,varargin)
+function [Ak,Bk,wk,defect_traj,xbarprop] = compute_zoh_noparam(tbar,xbar,ubar,h,func,func_linz,varargin)
 % Compute ZOH discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
 %   No linearization with respect to system parameters
 %
@@ -29,6 +29,7 @@ function [Ak,Bk,wk,defect_traj] = compute_zoh_noparam(tbar,xbar,ubar,h,func,func
     wk  = zeros(nx,N-1);
     vk  = zeros(nx,N-1);
     defect_traj(N-1) = 0.0; % records the defect between the propagated and reference traj. 
+    xbarprop = zeros(nx,N); xbarprop(:,1) = xbar(:,1);
     
     nx2 = nx^2;
     nxnu = nx*nu;
@@ -54,7 +55,8 @@ function [Ak,Bk,wk,defect_traj] = compute_zoh_noparam(tbar,xbar,ubar,h,func,func
         end
         zkp1 = z_(:,end);
         
-        defect_traj(k) = norm(zkp1(1:nx) - xbar(:,k+1));
+        defect_traj(k)  = norm(zkp1(1:nx) - xbar(:,k+1));
+        xbarprop(:,k+1) = zkp1(1:nx);        
         
         Akmat = reshape(zkp1(nx+1:nx+nx2),[nx,nx]);
         Bk(:,:,k) = Akmat*reshape(zkp1(nx+nx2+1:nx+nx2+nxnu),[nx,nu]);

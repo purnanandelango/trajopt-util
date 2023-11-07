@@ -57,7 +57,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.mdry    = 1;
     prb.mwet    = 2;
 
-    prb.smin    = 0.01;
+    prb.smin    = 01;
     prb.smax    = 20;
     prb.dtmin   = 0.01;
     prb.dtmax   = 3;
@@ -85,11 +85,11 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.uK      = [-prb.mdry*prb.gI;prb.ToFguess];
 
     % Scaling parameters
-    xmin = [prb.mdry; -10*ones(3,1); -2*ones(3,1); -ones(4,1); -prb.omgmax*ones(3,1)];
-    xmax = [prb.mwet;  10*ones(3,1);  2*ones(3,1);  ones(4,1);  prb.omgmax*ones(3,1)];
+    xmin = 0*[prb.mdry; -10*ones(3,1); -2*ones(3,1); -ones(4,1); -prb.omgmax*ones(3,1)];
+    xmax =   [prb.mwet;  10*ones(3,1);  2*ones(3,1);  ones(4,1);  prb.omgmax*ones(3,1)];
     
-    umin = [prb.Tmin*ones(3,1); prb.snom(1)];
-    umax = [prb.Tmax*ones(3,1); prb.snom(2)];
+    umin = 0*[prb.Tmin*ones(3,1); prb.snom(1)];
+    umax =   [prb.Tmax*ones(3,1); prb.snom(2)];
 
     [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax]},[0,1]);
 
@@ -106,8 +106,8 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.scp_iters = scp_iters; % Maximum SCP iterations
     
 
-    % prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
-    prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-8);
+    prb.solver_settings = sdpsettings('solver','gurobi','verbose',false);
+    % prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8,'ecos.FeasTol',1e-8);
     % prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
 
     prb.tr_norm = 2;
@@ -119,7 +119,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.cost_factor = cost_factor;
     
     prb.epsvc = 1e-8;
-    prb.epstr = 1e-7;
+    prb.epstr = 1e-4;
 
     % Takes in unscaled data
     prb.time_of_maneuver = @(x,u) disc.time_of_maneuver(prb.disc,prb.tau,u(4,:));    

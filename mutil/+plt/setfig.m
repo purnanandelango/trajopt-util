@@ -1,7 +1,6 @@
 function [] = setfig()
 % 02/11/20
-% inspired from: https://www.mathworks.com/matlabcentral/answers/183311-setting-default-interpreter-to-latex
-% see onenote if link doesn't work
+% Inspired from: https://www.mathworks.com/matlabcentral/answers/183311-setting-default-interpreter-to-latex
 
 fnm = 'lmodern';
 set(groot,'defaultAxesFontName',fnm,'defaultColorbarFontName',fnm,...
