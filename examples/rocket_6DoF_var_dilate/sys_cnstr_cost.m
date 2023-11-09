@@ -9,13 +9,13 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,prb,...
     K = prb.K;
 
     % Unscaled variables
-    % m    = sdpvar(1,K);
-    % rI   = sdpvar(3,K);
-    % vI   = sdpvar(3,K);
-    % qBI  = sdpvar(4,K);
-    % omgB = sdpvar(3,K);
-    % TB   = sdpvar(3,K);
-    % s    = sdpvar(1,K);
+    m    = sdpvar(1,K);
+    rI   = sdpvar(3,K);
+    vI   = sdpvar(3,K);
+    qBI  = sdpvar(4,K);
+    omgB = sdpvar(3,K);
+    TB   = sdpvar(3,K);
+    s    = sdpvar(1,K);
 
     for k = 1:K
         m(k)      = prb.Sx(1,1)          *x(1,k)     + prb.cx(1);
