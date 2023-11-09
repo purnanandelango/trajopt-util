@@ -2,6 +2,7 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
 % Provision for updating problem parameters after each SCP iteration
 % Scaling terms cx and cu are not used
+% Exact penalty weight can be matrix-valued
 
     converged = false;
     K = prb.K;
@@ -13,6 +14,13 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
     else
         foh_type = "v3"; % Default
     end
+
+    % Exact penalty weight
+    if isfield(prb,'wvc')
+        expnwt =  prb.wvc;
+    elseif isfield(prb,'Wvc')
+        expnwt = prb.Wvc;
+    end    
     
     fprintf("+------------------------------------------------------------------------------------------------------+\n");
     fprintf("|                                   ..:: Penalized Trust Region ::..                                   |\n");
@@ -30,14 +38,19 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
         vc_minus = sdpvar(prb.nx,K-1);
         vc_plus = sdpvar(prb.nx,K-1);
 
-        x = dx + prb.invSx*xbar;
-        u = du + prb.invSu*ubar;
+        % Unscaled state and control input
+        x_unscl = sdpvar(prb.nx,K);
+        u_unscl = sdpvar(prb.nu,K);
+        for k = 1:K
+            x_unscl(:,k) = prb.Sx*dx(:,k) + xbar(:,k);
+            u_unscl(:,k) = prb.Su*du(:,k) + ubar(:,k);
+        end
         
         Jvc = 0;
         cnstr = [];
         for k = 1:K-1
-            % Virtual control penalty            
-            Jvc = Jvc + sum(vc_plus(:,k) + vc_minus(:,k));
+            % Virtual control penalty 
+            Jvc = Jvc + sum(expnwt*(vc_plus(:,k) + vc_minus(:,k)));
             cnstr = [cnstr;
                      vc_plus(:,k) >= 0;
                      vc_minus(:,k) >= 0];
@@ -97,14 +110,14 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
         end
         
         % Constraints
-        [cnstr_sys,cost_fun,vc_constr_term] = sys_constr_cost_fun(x,u,prb,...
+        [cnstr_sys,cost_fun,vc_constr_term] = sys_constr_cost_fun(x_unscl,u_unscl,prb,...
                                                                   xbar,ubar);
 
 
         cnstr = [cnstr;cnstr_sys];
         
         % Objective
-        obj_fun = prb.wvc*Jvc + prb.wtr*sum(Jtr) + cost_fun;            
+        obj_fun = Jvc + prb.wtr*sum(Jtr) + cost_fun;            
         
         % Solve
         % Model = export(cnstr,obj_fun,prb.solver_settings); % Export input to solver from YALMIP
@@ -122,17 +135,13 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
         % Post process
         solve_time = yalmip_out.solvertime*1000;
         parse_time = yalmip_out.yalmiptime*1000;            
-        % x = value(x);
-        % u = value(u);
         dx = value(dx);
         du = value(du);
+        x_unscl = value(x_unscl);
+        u_unscl = value(u_unscl);        
         cost_val = value(cost_fun)/prb.cost_factor;
         vc_term = value(Jvc);
-        if isfield(prb,'wvb')
-            vc_constr_term = value(vc_constr_term)/prb.wvb;
-        else
-            vc_constr_term = value(vc_constr_term)/prb.wvc;
-        end
+        vc_constr_term = value(vc_constr_term)/max(expnwt(:));
 
         % Ensure that the TR value is always displayed consistently with 2-norm
         % Note that this is for display and for evaluation of termination criteria 
@@ -148,10 +157,8 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
         end
 
         % Update reference trajectory
-        for k = 1:prb.K
-            xbar(:,k) = prb.Sx*dx(:,k) + xbar(:,k);
-            ubar(:,k) = prb.Su*du(:,k) + ubar(:,k);
-        end        
+        xbar = x_unscl;
+        ubar = u_unscl;     
 
         ToF = prb.time_of_maneuver(xbar,ubar);        
         
