@@ -1,7 +1,7 @@
 function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     prb.K = K;
-    prb.Kfine = prb.K*1; 
+    prb.Kfine = prb.K*100; 
 
     prb.nx = 14;
     prb.nu = 3;
@@ -75,7 +75,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     umax = 6*ones(prb.nu,1);
     pmin = 0;
     pmax = 5;
-    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax],[pmin,pmax]},[-1,1]);
+    [Sz,cz] = misc.generate_scaling({[xmin,xmax],[umin,umax],[pmin,pmax]},[0,1]);
 
     prb.Sx = Sz{1}; prb.invSx = inv(Sz{1});
     prb.Su = Sz{2}; prb.invSu = inv(Sz{2});
@@ -94,19 +94,19 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.ode_solver = {'ode45',odeset('RelTol',1e-5,'AbsTol',1e-7)};
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 
-    prb.solver_settings = sdpsettings('solver','ecos','verbose',false,'ecos.AbsTol',1e-8,'ecos.RelTol',1e-8);
+    prb.solver_settings = sdpsettings('solver','ecos','verbose',false);
     % prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
     
-    prb.tr_norm = 2;
+    % prb.tr_norm = 2;
     % prb.tr_norm = inf;
-    % prb.tr_norm = 'quad';
+    prb.tr_norm = 'quad';
     
     prb.wvc = wvc;
     prb.wtr = wtr;
     prb.cost_factor = cost_factor;
     
-    prb.epsvc = 1e-8;
-    prb.epstr = 1e-5;
+    prb.epsvc = 1e-7;
+    prb.epstr = 5e-4;
     
     % convenient functions for accessing RHS of nonlinear and linearized ODE
     prb.dyn_func = @(t,x,u,s) plant.rocket6DoF.dyn_func(x,u,s,prb.c_ax,prb.c_ayz,diag(prb.JB),prb.gI,prb.rho,prb.SA,prb.rTB,prb.rcpB,prb.alphmdt,prb.betmdt);

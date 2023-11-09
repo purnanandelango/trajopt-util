@@ -1,21 +1,14 @@
 function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,~,prb,...
-                                           ~,ubar,~)
-% m     = x(1)
-% rI    = x(2:4)
-% vI    = x(5:7)
-% qBI   = x(8:11) 
-% omgB  = x(12:14)
-% TB    = u
+                                                      ~,ubar,~)
 
     K = prb.K;
 
-    % Unscaled variables
-    m    = prb.Sx(1,1)*x(1,:)               + prb.cx(1);
-    rI   = prb.Sx(2:4,2:4)*x(2:4,:)         + repmat(prb.cx(2:4),[1,K]);
-    vI   = prb.Sx(5:7,5:7)*x(5:7,:)         + repmat(prb.cx(5:7),[1,K]);
-    qBI  = prb.Sx(8:11,8:11)*x(8:11,:)      + repmat(prb.cx(8:11),[1,K]);
-    omgB = prb.Sx(12:14,12:14)*x(12:14,:)   + repmat(prb.cx(12:14),[1,K]);
-    TB   = prb.Su*u                         + repmat(prb.cu,[1,K]);
+    m    = x(1,:);
+    rI   = x(2:4,:);
+    vI   = x(5:7,:);
+    qBI  = x(8:11,:);
+    omgB = x(12:14,:);
+    TB   = u(1:3,:);
 
     % Boundary conditions
     cnstr = [m(1) == prb.mwet;
@@ -42,10 +35,10 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,~,prb,...
                  norm(vI(:,k)) <= prb.Vmax;                                             % Speed upper bound
                  TB(:,k)'*(-ubar(:,k)/norm(ubar(:,k))) + prb.Tmin <= vb_Tmin(k);        % Linearized thrust magnitude lower bound
                  vb_Tmin(k) >= 0];
-        
-        cost_fun = cost_fun + prb.cost_factor*norm(u(:,k));
     
     end  
+
+    cost_fun = cost_fun + prb.cost_factor*x(1,K)*prb.invSx(1,1);
 
     vcvb_cnstr = prb.wvc*sum(vb_Tmin(:)); % Slack for exactly penalized constraint
 
