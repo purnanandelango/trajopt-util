@@ -73,7 +73,7 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
                 for k = 1:K
                     xubar_scl(:,k) = [prb.invSx*(xbar(:,k)-prb.cx);
                                       prb.invSu*(ubar(:,k)-prb.cu)];
-                    Jtr = Jtr + ([x(:,k);u(:,k)]-xubar_scl(:,k))'*([x(:,k);u(:,k)]-xubar_scl(:,k));        
+                    Jtr = Jtr + 0.5*([x(:,k);u(:,k)]-xubar_scl(:,k))'*([x(:,k);u(:,k)]-xubar_scl(:,k));        
                 end
                 pbar_scl = prb.invSp*(pbar-prb.cp);
                 Jtr = Jtr + (p-pbar_scl)'*(p-pbar_scl);
@@ -155,22 +155,17 @@ function [xbar,ubar,pbar,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost
         vc_term = sum(value(Jvc));
         vc_constr_term = value(vc_constr_term)/max(expnwt(:));
         
-        % Ensure that the TR value is always displayed consistently with 2-norm
+        % Ensure that the TR value is always displayed consistently with infinity norm
         % Note that this is for display and for evaluation of termination criteria 
-        switch prb.tr_norm
-            case 2
-                tr_term = sum(value(Jtr));
-            case {'quad',inf}
-                Jtr_post_solve = zeros(1,K+1);        
-                for k = 1:K
-                    xubar_scl = [prb.invSx*(xbar(:,k)-prb.cx);
-                                prb.invSu*(ubar(:,k)-prb.cu)];                    
-                    Jtr_post_solve(k) = norm([x(:,k);u(:,k)]-xubar_scl,2);        
-                end
-                pbar_scl = prb.invSp*(pbar-prb.cp);
-                Jtr_post_solve(K+1) = norm(p-pbar_scl);
-                tr_term = sum(Jtr_post_solve);
+        Jtr_post_solve = zeros(1,K+1);        
+        for k = 1:K
+            xubar_scl = [prb.invSx*(xbar(:,k)-prb.cx);
+                        prb.invSu*(ubar(:,k)-prb.cu)];                    
+            Jtr_post_solve(k) = norm([x(:,k);u(:,k)]-xubar_scl,'inf');        
         end
+        pbar_scl = prb.invSp*(pbar-prb.cp);
+        Jtr_post_solve(K+1) = norm(p-pbar_scl,'inf');
+        tr_term = max(Jtr_post_solve);
 
         % Update reference trajectory
         xbar = x_unscl;

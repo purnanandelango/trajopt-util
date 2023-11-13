@@ -66,7 +66,7 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
             case 'quad'
                 Jtr = 0;        
                 for k = 1:K
-                    Jtr = Jtr + ([dx(:,k);du(:,k)])'*([dx(:,k);du(:,k)]);
+                    Jtr = Jtr + 0.5*([dx(:,k);du(:,k)])'*([dx(:,k);du(:,k)]);
                 end                
         end
 
@@ -143,18 +143,13 @@ function [xbar,ubar,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys_constr_c
         vc_term = value(Jvc);
         vc_constr_term = value(vc_constr_term)/max(expnwt(:));
 
-        % Ensure that the TR value is always displayed consistently with 2-norm
+        % Ensure that the TR value is always displayed consistently with infinity norm
         % Note that this is for display and for evaluation of termination criteria 
-        switch prb.tr_norm
-            case 2
-                tr_term = sum(value(Jtr));
-            case {'quad',inf}
-                Jtr_post_solve = zeros(1,K);        
-                for k = 1:K
-                    Jtr_post_solve(k) = norm([dx(:,k);du(:,k)],2);        
-                end
-                tr_term = sum(Jtr_post_solve);
+        Jtr_post_solve = zeros(1,K);        
+        for k = 1:K
+            Jtr_post_solve(k) = norm([dx(:,k);du(:,k)],'inf');
         end
+        tr_term = max(Jtr_post_solve);
 
         % Update reference trajectory
         xbar = x_unscl;
