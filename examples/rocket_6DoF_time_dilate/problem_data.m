@@ -90,7 +90,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     % SCP parameters
 
     prb.disc = "ZOH";
-    prb.foh_type = "v1";
+    prb.foh_type = "v3";
     prb.ode_solver = {'ode45',odeset('RelTol',1e-5,'AbsTol',1e-7)};
     prb.scp_iters = scp_iters; % Maximum SCP iterations
 

@@ -1,28 +1,15 @@
 function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
                                                     xbar,ubar)
-% r    = x(1:3)
-% v    = x(4:6)
-% T    = u(1:3)
-% s    = u(4)
 
     K = prb.K;
 
-    % Unscaled variables
-    r   = sdpvar(prb.n,K);
-    v   = sdpvar(prb.n,K);
-    T   = sdpvar(prb.n,K);
-    s   = sdpvar(1,K);
+    r    = x(1:2,:);
+    v    = x(3:4,:);
+    T    = u(1:2,:);
+    s    = u(3,:);
 
     % Obstacle avoidance buffer
     nu_ncvx = sdpvar(prb.nobs+1,K);
-
-    for k = 1:K
-        r(:,k)   = prb.Sx(1:prb.n,1:prb.n)                  *x(1:prb.n,k)          + prb.cx(1:prb.n);
-        v(:,k)   = prb.Sx(prb.n+1:2*prb.n,prb.n+1:2*prb.n)  *x(prb.n+1:2*prb.n,k)  + prb.cx(prb.n+1:2*prb.n);
-
-        T(:,k)   = prb.Su(1:prb.n,1:prb.n)                  *u(1:prb.n,k)          + prb.cu(1:prb.n);        
-        s(k)     = prb.Su(prb.n+1,prb.n+1)                  *u(prb.n+1,k)          + prb.cu(prb.n+1);        
-    end
     
     % Boundary conditions
     cnstr = [r(:,1)   == prb.r1;
@@ -55,7 +42,7 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
 
     vc_cnstr = sum(nu_ncvx(:));    
 
-    cost_fun = cost_fun + prb.cost_factor*norm(u(:)) + prb.wvb*vc_cnstr;
+    cost_fun = cost_fun + prb.cost_factor*norm(u(:)) + prb.wvc*vc_cnstr;
 
     % Compute time of maneuver and constrain time step
     ToF = 0;

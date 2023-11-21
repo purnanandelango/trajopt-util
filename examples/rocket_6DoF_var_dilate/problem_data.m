@@ -119,7 +119,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.cost_factor = cost_factor;
     
     prb.epsvc = 1e-8;
-    prb.epstr = 1e-4;
+    prb.epstr = 5e-4;
 
     % Takes in unscaled data
     prb.time_of_maneuver = @(x,u) disc.time_of_maneuver(prb.disc,prb.tau,u(4,:));    
