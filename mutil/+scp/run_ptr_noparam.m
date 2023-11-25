@@ -1,4 +1,4 @@
-function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun,varargin)
+function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun,varargin)
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
 % Provision for updating problem parameters after each SCP iteration
 % Exact penalty weight can be matrix-valued
@@ -21,11 +21,11 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         expnwt = prb.Wvc;
     end
     
-    fprintf("+------------------------------------------------------------------------------------------------------+\n");
-    fprintf("|                                   ..:: Penalized Trust Region ::..                                   |\n");
-    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
-    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |   Cost   |   ToF   | log(VC cnstr.) |\n");
-    fprintf("+-------+------------+-----------+-----------+---------+---------+----------+---------+----------------+\n");
+    fprintf("+--------------------------------------------------------------------------------------------------------+\n");
+    fprintf("|                                    ..:: Penalized Trust Region ::..                                    |\n");
+    fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
+    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   | log(VC cnstr.) |\n");
+    fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
     
     for j = 1:prb.scp_iters
         
@@ -128,7 +128,7 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         yalmip_out = optimize(cnstr,obj_fun,prb.solver_settings);
         % assert(ismember(yalmip_out.problem,[0,3]),"Subproblem is unsolved.\nSolver message: %s",yalmiperror(yalmip_out.problem));
         if ~ismember(yalmip_out.problem,[0,4])
-            fprintf("+------------------------------------------------------------------------------------------------------+\n");
+            fprintf("+--------------------------------------------------------------------------------------------------------+\n");
             fprintf('Subproblem is unsolved. Returning the previous iterate.\n'); 
             break
         end
@@ -164,11 +164,11 @@ function [xbar,ubar,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_f
         ToF = prb.time_of_maneuver(xbar,ubar);        
         
         % Console output
-        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %8.1e | %7.1e |    %5.1f       |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF,log10(vc_constr_term));
+        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %10.3e | %7.1e |    %5.1f       |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF,log10(vc_constr_term));
         
         if vc_term < prb.epsvc && tr_term < prb.epstr
             converged = true;
-            fprintf("+------------------------------------------------------------------------------------------------------+\n")
+            fprintf("+--------------------------------------------------------------------------------------------------------+\n")
             fprintf('Converged!\n')
             break
         end
