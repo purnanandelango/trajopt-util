@@ -1,5 +1,5 @@
 function [] = plot_polyhed(H_grid,g_grid)
-% Create 2D or 3D plot of sequence of polyhedron 
+% Create 2D or 3D plot of sequence of polyhedron using MPT3
 % { z | H_grid{j}*z <= g_grid{j} } for j = 1,...,M
 
     % Ambient dimension
