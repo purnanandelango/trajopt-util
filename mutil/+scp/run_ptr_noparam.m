@@ -79,7 +79,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bmk,Bpk,wk,~] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
                 [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end

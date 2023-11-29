@@ -1,7 +1,7 @@
 function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,prb)
 % PTR SCP without parameters as decision variables and ZOH/FOH discretization
-% Subproblem solver input is handparsed
-% No provision for update the problem parameters after each SCP iteration
+% Subproblem solver input is hand-parsed
+% No provision for updating the problem parameters after each SCP iteration
 % Exact penalty weight cannot be matrix-valued; only scalar wvc is allowed
 
     converged = false;
@@ -33,9 +33,15 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
                        sparse(nf,nx*(K-1)) prb.Ef];
     Ghat_if         = [Ghat_if sparse((ni+nf),nu*K+2*nx*(K-1))];
     Ghat_mu         = [speye(nx*(K-1)) -speye(nx*(K-1))];
-    ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
-                       (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
-                       zeros(nx*(K-1),1)];
+    if prb.disc == "ZOH"
+        ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
+                           (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
+                           zeros(nx*(K-1)+nu,1)];
+    else
+        ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
+                           (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
+                           zeros(nx*(K-1),1)];        
+    end
     Hhat_u_mu       = [sparse(2*nu*K,nx*K)     [speye(nu*K); -speye(nu*K)] sparse(2*nu*K,2*nx*(K-1));
                        sparse(2*nx*(K-1),(nx+nu)*K) -speye(2*nx*(K-1))];
     Hhat_y          = - [kron(speye(K-1),prb.Ey) sparse(ny*(K-1),nx)] + [sparse(ny*(K-1),nx) kron(speye(K-1),prb.Ey)]; 
@@ -63,7 +69,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bmk,Bpk,wk,~] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
                 [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
@@ -116,8 +122,9 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             Ghat_x = [Ahat sparse(nx*(K-1),nx)] - [sparse(nx*(K-1),nx) speye(nx*(K-1))];
             Ghat_u = [Bhat sparse(nx*(K-1),nu)]; 
             Ghat = [Ghat_if;
-                    Ghat_x Ghat_u Ghat_mu];
-            ghat((ni+nf)+1:end) = -what;  
+                    Ghat_x Ghat_u Ghat_mu;
+                    sparse(nu,nx*K+nu*(K-2)) speye(nu) -speye(nu) sparse(nu,2*nx*(K-1))];
+            ghat((ni+nf)+1:end) = [-what;sparse(nu,1)];  
             phat = phat_cost_vc - prb.wtr*[xbar_scl(:);
                                            ubar_scl(:);
                                            zeros(2*nx*(K-1),1)];
@@ -141,7 +148,11 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             z = result.x;
         elseif prb.solver.name == "scs"
             cones = struct;
-            cones.z = ni+nf+nx*(K-1);
+            if prb.disc == "ZOH"
+                cones.z = ni+nf+nx*(K-1)+nu;
+            else
+                cones.z = ni+nf+nx*(K-1);
+            end
             cones.l = 2*nu*K+2*nx*(K-1)+ny*(K-1);
             data = struct;
             data.P = Phat;
