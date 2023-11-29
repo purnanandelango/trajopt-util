@@ -49,7 +49,6 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     % Scale reference state and control
     xbar_scl = prb.invSx*(xbar - repmat(prb.cx,[1,K]));
     ubar_scl = prb.invSu*(ubar - repmat(prb.cu,[1,K]));    
-    zbar = [xbar_scl(:);ubar_scl(:);zeros(2*nx*(K-1),1)];
     
     fprintf("+---------------------------------------------------------------------------------------+\n");
     fprintf("|                            ..:: Penalized Trust Region ::..                           |\n");
@@ -128,13 +127,13 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
 
         tic
         if prb.solver.name == "quadprog"
-            z = quadprog(Phat,phat,Hhat,hhat,Ghat,ghat,[],[],zbar,optimoptions('quadprog','Algorithm','interior-point-convex',...
+            z = quadprog(Phat,phat,Hhat,hhat,Ghat,ghat,[],[],[],optimoptions('quadprog','Algorithm','interior-point-convex',... 'active-set',...
                          'Display',prb.solver.Display,'ConstraintTolerance',prb.solver.ConstraintTolerance,'OptimalityTolerance',prb.solver.OptimalityTolerance));
         elseif prb.solver.name == "ecos"
             z = ecosqp(Phat,phat,Hhat,full(hhat),Ghat,full(ghat),ecosoptimset('verbose',prb.solver.verbose,'abstol',prb.solver.abstol,'reltol',prb.solver.reltol));
         elseif prb.solver.name == "piqp"
             solver = piqp('sparse');
-            solver.update_settings('compute_timings',true,'verbose',prb.solver.verbose,...
+            solver.update_settings('compute_timings',false,'verbose',prb.solver.verbose,...
                                    'eps_abs',prb.solver.eps_abs,'eps_rel',prb.solver.eps_rel,...
                                    'eps_duality_gap_abs',prb.solver.eps_duality_gap_abs,'eps_duality_gap_rel',prb.solver.eps_duality_gap_rel);
             solver.setup(Phat, phat, Ghat, ghat, Hhat, hhat, [], []);
@@ -149,8 +148,13 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             data.c = phat;
             data.A = [Ghat;Hhat];
             data.b = full([ghat;hhat]);
+            if j > 1
+                data.x = z;
+                data.y = y_scs;
+                data.s = s_scs;
+            end
             settings = struct('eps_abs',prb.solver.eps_abs,'eps_rel',prb.solver.eps_rel,'verbose',prb.solver.verbose);
-            z = scs(data,cones,settings);
+            [z,y_scs,s_scs] = scs(data,cones,settings);
         elseif prb.solver.name == "mosek"
             blc = [ghat;-Inf(2*nu*K+2*nx*(K-1)+ny*(K-1),1)];
             buc = [ghat;hhat];
@@ -161,8 +165,12 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             solver = osqp;
             settings = struct('eps_abs',prb.solver.eps_abs,'eps_rel',prb.solver.eps_rel,'max_iter',prb.solver.max_iter,'verbose',prb.solver.verbose);
             solver.setup(Phat,phat,[Ghat;Hhat],[ghat;-Inf(2*nu*K+2*nx*(K-1)+ny*(K-1),1)],[ghat;hhat],settings);
+            if j > 1
+                solver.warm_start('x',z,'y',y_osqp);
+            end            
             res = solver.solve();
             z = res.x; 
+            y_osqp = res.y;
         end
         solve_time = toc*1000;
 
@@ -186,7 +194,6 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
         ubar     = u;
         xbar_scl = x_scl;
         ubar_scl = u_scl; 
-        zbar     = z;
 
         ToF = prb.time_of_maneuver(xbar,ubar);        
         
