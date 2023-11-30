@@ -37,10 +37,12 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
         ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
                            (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
                            zeros(nx*(K-1)+nu,1)];
+        n_eq_cnstr      = ni + nf + nx*(K-1) + nu;
     else
         ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
                            (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
                            zeros(nx*(K-1),1)];        
+        n_eq_cnstr      = ni + nf + nx*(K-1);
     end
     Hhat_u_mu       = [sparse(2*nu*K,nx*K)     [speye(nu*K); -speye(nu*K)] sparse(2*nu*K,2*nx*(K-1));
                        sparse(2*nx*(K-1),(nx+nu)*K) -speye(2*nx*(K-1))];
@@ -51,6 +53,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
                        -prb.scl_bnd(1)*ones(nu*K,1);
                         sparse(2*nx*(K-1),1);
                         prb.eps_cnstr*ones(ny*(K-1),1)];
+    n_ineq_cnstr    = 2*nu*K + 2*nx*(K-1) + ny*(K-1);
 
     % Scale reference state and control
     xbar_scl = prb.invSx*(xbar - repmat(prb.cx,[1,K]));
@@ -148,12 +151,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             z = result.x;
         elseif prb.solver.name == "scs"
             cones = struct;
-            if prb.disc == "ZOH"
-                cones.z = ni+nf+nx*(K-1)+nu;
-            else
-                cones.z = ni+nf+nx*(K-1);
-            end
-            cones.l = 2*nu*K+2*nx*(K-1)+ny*(K-1);
+            cones.z = n_eq_cnstr;
+            cones.l = n_ineq_cnstr;
             data = struct;
             data.P = Phat;
             data.c = phat;
@@ -167,7 +166,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             settings = struct('eps_abs',prb.solver.eps_abs,'eps_rel',prb.solver.eps_rel,'verbose',prb.solver.verbose);
             [z,y_scs,s_scs] = scs(data,cones,settings);
         elseif prb.solver.name == "mosek"
-            blc = [ghat;-Inf(2*nu*K+2*nx*(K-1)+ny*(K-1),1)];
+            blc = [ghat;-Inf(n_ineq_cnstr,1)];
             buc = [ghat;hhat];
             settings = struct('MSK_DPAR_INTPNT_QO_TOL_PFEAS',prb.solver.MSK_DPAR_INTPNT_QO_TOL_PFEAS,'MSK_DPAR_INTPNT_QO_TOL_DFEAS',prb.solver.MSK_DPAR_INTPNT_QO_TOL_DFEAS,'MSK_DPAR_INTPNT_QO_TOL_REL_GAP',prb.solver.MSK_DPAR_INTPNT_QO_TOL_REL_GAP);
             res = mskqpopt(Phat,phat,[Ghat;Hhat],blc,buc,[],[],settings,'minimize info echo(0)');
@@ -182,6 +181,22 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             res = solver.solve();
             z = res.x; 
             y_osqp = res.y;
+        elseif prb.solver.name == "gurobi"
+            model = struct;
+            model.Q = Phat/2;
+            model.obj = phat;
+            model.A = [Ghat;Hhat];
+            model.rhs = full([ghat;hhat]);
+            model.lb = -Inf((nx+nu)*K+2*nx*(K-1),1);
+            % model.ub = [];
+            model.sense = [repmat('=',[n_eq_cnstr,1]);
+                           repmat('<',[n_ineq_cnstr,1])];
+            params = struct;
+            params.OptimalityTol = prb.solver.OptimalityTol;
+            params.FeasibilityTol = prb.solver.FeasibilityTol;
+            params.OutputFlag = prb.solver.verbose;
+            result = gurobi(model,params);
+            z = result.x;
         end
         solve_time = toc*1000;
 
