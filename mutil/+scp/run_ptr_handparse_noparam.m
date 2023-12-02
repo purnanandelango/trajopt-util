@@ -198,16 +198,18 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             params.OutputFlag = prb.solver.verbose;
             result = gurobi(model,params);
             z = result.x;
-        elseif prb.solver.name == "pipg" % ZOH discretization is unsupported
+        elseif prb.solver.name == "pipg" % uK is unconstrained in ZOH 
             
+            GgHhtil = [Ghat_x Ghat_u Ghat_mu -what;
+                       Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1)) prb.eps_cnstr*ones(ny*(K-1),1)];
+
             model = struct;
             model.nx = nx;
             model.nu = nu;
             model.K = K;
             model.Phat = Phat;
             model.phat = phat;
-            GgHhtil_normal = linalg.mat_normalize([Ghat_x Ghat_u Ghat_mu -what;
-                                                   Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1)) prb.eps_cnstr*ones(ny*(K-1),1)],'row');
+            GgHhtil_normal = linalg.mat_normalize(GgHhtil,'row');
             model.Gtil = GgHhtil_normal(1:nx*(K-1),1:end-1);
             model.gtil = GgHhtil_normal(1:nx*(K-1),end);
             model.Htil = GgHhtil_normal(nx*(K-1)+1:end,1:end-1);
@@ -215,8 +217,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             model.scl_bnd = prb.scl_bnd;
             model.i_idx = prb.i_idx;
             model.f_idx = prb.f_idx;
-            model.zhat_i = (prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
-            model.zhat_f = (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
+            model.zhat_i = ghat(1:ni);
+            model.zhat_f = ghat(ni+1:ni+nf);
 
             sGtilHtil = svd(full([model.Gtil;model.Htil]));
 

@@ -1,42 +1,41 @@
 function [z_jp1,w_jp1,v_jp1,status] = pipg(model, options, ...
                                            varargin)
-%{
-PIPG with extrapolation
+% PIPG with extrapolation
+%
+% Model:
+%   - nx
+%   - nu
+%   - K
+%   - Phat
+%   - phat
+%   - Gtil
+%   - gtil
+%   - Htil
+%   - htil
+%   - scl_bnd
+%   - i_idx
+%   - f_idx
+%   - zhat_i
+%   - zhat_f
+% 
+% Options:
+%   - alpha
+%   - beta
+%   - rho
+%   - eps_abs
+%   - max_iter
+%   - verbose
+%   - test_termination
 
-Model:
-  - nx
-  - nu
-  - K
-  - Phat
-  - phat
-  - Gtil
-  - gtil
-  - Htil
-  - htil
-  - scl_bnd
-  - i_idx
-  - f_idx
-  - zhat_i
-  - zhat_f
-
-Options:
-  - alpha
-  - beta
-  - rho
-  - eps_abs
-  - max_iter
-  - verbose
-  - test_termination
-%}
-    if nargin == 5
+    if nargin == 5 % Warmstart both primal and dual
         zet_j = varargin{1};
         eta_j = varargin{2};
         chi_j = varargin{3};
-    elseif nargin == 3
+    elseif nargin == 3 % Warmstart only primal
         zet_j = varargin{1};
         eta_j = zeros(size(model.Gtil,1),1);
         chi_j = zeros(size(model.Htil,1),1);
-    elseif nargin == 2
+    elseif nargin == 2 % Start from zeros
         zet_j = zeros(size(model.Phat,1),1);
         eta_j = zeros(size(model.Gtil,1),1);
         chi_j = zeros(size(model.Htil,1),1);
@@ -78,7 +77,7 @@ Options:
         % Gradient descent
         z_jp1 = zet_j - options.alpha * (model.Phat*zet_j + model.phat + GtilT*eta_j + HtilT*chi_j);
        
-        % Projection  and slack nonnegativity
+        % Projection
         z_jp1(model.i_idx)       = model.zhat_i;                    % Initial condition
         z_jp1(nxKm1+model.f_idx) = model.zhat_f;                    % Final condition
         z_jp1(nxK+1:nxnuK)       = max(uhatmin,min(uhatmax,...
