@@ -57,7 +57,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
 
     % Scale reference state and control
     xbar_scl = prb.invSx*(xbar - repmat(prb.cx,[1,K]));
-    ubar_scl = prb.invSu*(ubar - repmat(prb.cu,[1,K]));    
+    ubar_scl = prb.invSu*(ubar - repmat(prb.cu,[1,K]));  
+    zbar = [xbar_scl(:);ubar_scl(:);zeros(2*nx*(K-1),1)];
     
     fprintf("+---------------------------------------------------------------------------------------+\n");
     fprintf("|                            ..:: Penalized Trust Region ::..                           |\n");
@@ -197,6 +198,42 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             params.OutputFlag = prb.solver.verbose;
             result = gurobi(model,params);
             z = result.x;
+        elseif prb.solver.name == "pipg" % ZOH discretization is unsupported
+            
+            model = struct;
+            model.nx = nx;
+            model.nu = nu;
+            model.K = K;
+            model.Phat = Phat;
+            model.phat = phat;
+            GgHhtil_normal = linalg.mat_normalize([Ghat_x Ghat_u Ghat_mu -what;
+                                                   Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1)) prb.eps_cnstr*ones(ny*(K-1),1)],'row');
+            model.Gtil = GgHhtil_normal(1:nx*(K-1),1:end-1);
+            model.gtil = GgHhtil_normal(1:nx*(K-1),end);
+            model.Htil = GgHhtil_normal(nx*(K-1)+1:end,1:end-1);
+            model.htil = GgHhtil_normal(nx*(K-1)+1:end,end);
+            model.scl_bnd = prb.scl_bnd;
+            model.i_idx = prb.i_idx;
+            model.f_idx = prb.f_idx;
+            model.zhat_i = (prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
+            model.zhat_f = (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
+
+            sGtilHtil = svd(full([model.Gtil;model.Htil]));
+
+            options = struct;
+            options.alpha = 2/(sqrt(prb.wtr^2 + 4*prb.solver.omega*(sGtilHtil(1)^2))+prb.wtr);
+            options.beta = prb.solver.omega*options.alpha;
+            options.rho = prb.solver.rho;
+            options.eps_abs = prb.solver.eps_abs;
+            options.max_iter = prb.solver.max_iter;
+            options.verbose = prb.solver.verbose;
+            options.test_termination = prb.solver.test_termination;
+
+            if j > 1
+                [z,eta_pipg,chi_pipg] = solvers.pipg(model,options,zbar,eta_pipg,chi_pipg);
+            else
+                [z,eta_pipg,chi_pipg] = solvers.pipg(model,options,zbar);
+            end
         end
         solve_time = toc*1000;
 
@@ -219,7 +256,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
         xbar     = x;
         ubar     = u;
         xbar_scl = x_scl;
-        ubar_scl = u_scl; 
+        ubar_scl = u_scl;
+        zbar     = z;
 
         ToF = prb.time_of_maneuver(xbar,ubar);        
         
