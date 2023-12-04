@@ -55,6 +55,12 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
                         prb.eps_cnstr*ones(ny*(K-1),1)];
     n_ineq_cnstr    = 2*nu*K + 2*nx*(K-1) + ny*(K-1);
 
+    % PIPG
+    Htil            = [Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1))];  
+    htil            = prb.eps_cnstr*ones(ny*(K-1),1);
+    Hhtil           = [Htil htil];
+    Hhtil_normal    = linalg.mat_normalize(Hhtil,'row');
+
     % Scale reference state and control
     xbar_scl = prb.invSx*(xbar - repmat(prb.cx,[1,K]));
     ubar_scl = prb.invSu*(ubar - repmat(prb.cu,[1,K]));  
@@ -198,22 +204,21 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             params.OutputFlag = prb.solver.verbose;
             result = gurobi(model,params);
             z = result.x;
-        elseif prb.solver.name == "pipg" % uK is unconstrained in ZOH 
+        elseif prb.solver.name == "pipg"
             
-            GgHhtil = [Ghat_x Ghat_u Ghat_mu -what;
-                       Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1)) prb.eps_cnstr*ones(ny*(K-1),1)];
+            Ggtil        = [Ghat(ni+nf+1:end,:) ghat(ni+nf+1:end)];
+            Ggtil_normal = linalg.mat_normalize(Ggtil,'row');
 
             model = struct;
             model.nx = nx;
             model.nu = nu;
             model.K = K;
-            model.Phat = Phat;
-            model.phat = phat;
-            GgHhtil_normal = linalg.mat_normalize(GgHhtil,'row');
-            model.Gtil = GgHhtil_normal(1:nx*(K-1),1:end-1);
-            model.gtil = GgHhtil_normal(1:nx*(K-1),end);
-            model.Htil = GgHhtil_normal(nx*(K-1)+1:end,1:end-1);
-            model.htil = GgHhtil_normal(nx*(K-1)+1:end,end);
+            model.Phat = prb.solver.lambda*Phat;
+            model.phat = prb.solver.lambda*phat;
+            model.Gtil = Ggtil_normal(:,1:end-1);
+            model.gtil = Ggtil_normal(:,end);
+            model.Htil = Hhtil_normal(:,1:end-1);
+            model.htil = Hhtil_normal(:,end);
             model.scl_bnd = prb.scl_bnd;
             model.i_idx = prb.i_idx;
             model.f_idx = prb.f_idx;
