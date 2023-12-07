@@ -10,7 +10,8 @@ function [t_,x_] = rk4_march(f,tspan,x0,h,u,varargin)
 %   x_      : n x N matrix of integrated trajectory (N is determined by h)
 %   t_      : 1 x N vector of discrete time grid over which x_ is defined
 
-% N = floor(diff(tspan)/h)+1;
+% assert(mod(diff(tspan),h) == 0,"Time interval length should be an integral multiple of step length h.");
+
 N = round(diff(tspan)/h)+1;
 
 % Initialization
