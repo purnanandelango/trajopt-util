@@ -111,6 +111,24 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
                                                            prb.invSx*wk(:,k)];
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];             
+        elseif prb.disc == "Impulse"
+            % Propagation
+            tic
+            if isfield(prb,'ode_solver')
+                [Ak,wk] = disc.compute_impulse_noparam(prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,wk] = disc.compute_impulse_noparam(prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
+            end
+            propagate_time = toc*1000;
+
+            for k = 1:K-1
+                cnstr = [cnstr;
+                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
+                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
+                                                           prb.invSx*Ak(:,:,k)*prb.Eu2x*(prb.Su*u(:,k)+prb.cu) +...
+                                                           prb.invSx*wk(:,k)];                
+            end
+            cnstr = [cnstr; u(:,K) == u(:,K-1)];  
         end
         
         % Constraints
