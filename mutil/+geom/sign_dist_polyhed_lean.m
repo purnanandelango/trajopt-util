@@ -12,7 +12,7 @@ function [y,dist_val,dist_jac] = sign_dist_polyhed_lean(x,H,h)
         P = 2*eye(n);
         q = -2*x;
         opts = optimoptions('quadprog','Algorithm','active-set',...
-               'ConstraintTolerance',1e-7,'OptimalityTolerance',1e-7);
+               'ConstraintTolerance',1e-7,'OptimalityTolerance',1e-7,'Display','off');
         y = quadprog(P,q,H,h,[],[],[],[],ones(n,1),opts);
         dist_val = norm(y-x);
 
