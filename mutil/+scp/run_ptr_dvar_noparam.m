@@ -106,7 +106,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys
                                                            prb.invSx*Bk(:,:,k)*prb.Su*du(:,k) +...
                                                            prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1))];
             end
-            cnstr = [cnstr; u(:,K) == u(:,K-1)];             
+            cnstr = [cnstr; du(:,K) == du(:,K-1)];             
         end
         
         % Constraints
