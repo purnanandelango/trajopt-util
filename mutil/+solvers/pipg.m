@@ -12,7 +12,8 @@ function [z_jp1,w_jp1,v_jp1,status] = pipg(model, options, ...
 %   - gtil
 %   - Htil
 %   - htil
-%   - scl_bnd
+%   - uhatmin
+%   - uhatmax 
 %   - i_idx
 %   - f_idx
 %   - zhat_i
@@ -45,11 +46,8 @@ function [z_jp1,w_jp1,v_jp1,status] = pipg(model, options, ...
 
     % Convenience definitions
     nxK     = model.nx*model.K;
-    nuK     = model.nu*model.K;
     nxKm1   = model.nx*(model.K-1);
     nxnuK   = (model.nx+model.nu)*model.K;
-    uhatmin = model.scl_bnd(1)*ones(nuK,1);
-    uhatmax = model.scl_bnd(2)*ones(nuK,1);
 
     GtilT = model.Gtil';
     HtilT = model.Htil';
@@ -80,7 +78,8 @@ function [z_jp1,w_jp1,v_jp1,status] = pipg(model, options, ...
         % Projection
         z_jp1(model.i_idx)       = model.zhat_i;                    % Initial condition
         z_jp1(nxKm1+model.f_idx) = model.zhat_f;                    % Final condition
-        z_jp1(nxK+1:nxnuK)       = max(uhatmin,min(uhatmax,...
+        z_jp1(nxK+1:nxnuK)       = max(model.uhatmin,...
+                                   min(model.uhatmax,...
                                        z_jp1(nxK+1:nxnuK)));        % Control input bounds
         z_jp1(nxnuK+1:end)       = max(0,z_jp1(nxnuK+1:end));       % Slack nonnegativity
 
