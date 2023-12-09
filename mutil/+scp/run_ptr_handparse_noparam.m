@@ -9,11 +9,6 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     nx = prb.nx;
     nu = prb.nu;
 
-    ni = size(prb.Ei,1);
-    nf = size(prb.Ef,1);
-    ny = size(prb.Ey,1);
-    % nz = (nx+nu)*K+2*nx*(K-1);
-
     % Check if type of FOH computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
@@ -21,6 +16,18 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     else
         foh_type = "v3"; % Default
     end
+
+    ni = size(prb.Ei,1);
+    nf = size(prb.Ef,1);
+    ny = size(prb.Ey,1);
+    % nz = (nx+nu)*K+2*nx*(K-1);    
+
+    zhat_i          = (prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
+    zhat_f          = (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx); 
+    uhatmax         = kron(ones(K,1),prb.invSu*(prb.umax-prb.cu));
+    uhatmin         = kron(ones(K,1),prb.invSu*(prb.umin-prb.cu));
+    eps_hat         = prb.eps_cnstr*kron(ones(K-1,1),...
+                                         prb.Ey*prb.invSx*prb.Ey'*ones(ny,1));
 
     % Parse to QP canonical form
     Phat            = blkdiag(prb.wtr*speye((nx+nu)*K),sparse(2*nx*(K-1),2*nx*(K-1)));
@@ -34,13 +41,13 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     Ghat_if         = [Ghat_if sparse((ni+nf),nu*K+2*nx*(K-1))];
     Ghat_mu         = [speye(nx*(K-1)) -speye(nx*(K-1))];
     if prb.disc == "ZOH"
-        ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
-                           (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
+        ghat            = [zhat_i;
+                           zhat_f;
                            zeros(nx*(K-1)+nu,1)];
         n_eq_cnstr      = ni + nf + nx*(K-1) + nu;
     else
-        ghat            = [(prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
-                           (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx);
+        ghat            = [zhat_i;
+                           zhat_f;
                            zeros(nx*(K-1),1)];        
         n_eq_cnstr      = ni + nf + nx*(K-1);
     end
@@ -49,15 +56,15 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     Hhat_y          = - [kron(speye(K-1),prb.Ey) sparse(ny*(K-1),nx)] + [sparse(ny*(K-1),nx) kron(speye(K-1),prb.Ey)]; 
     Hhat            = [Hhat_u_mu;
                        Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1))];
-    hhat            = [ prb.scl_bnd(2)*ones(nu*K,1);
-                       -prb.scl_bnd(1)*ones(nu*K,1);
+    hhat            = [ uhatmax;
+                       -uhatmin;
                         sparse(2*nx*(K-1),1);
-                        prb.eps_cnstr*ones(ny*(K-1),1)];
+                        eps_hat];
     n_ineq_cnstr    = 2*nu*K + 2*nx*(K-1) + ny*(K-1);
 
     % PIPG
     Htil            = [Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1))];  
-    htil            = prb.eps_cnstr*ones(ny*(K-1),1);
+    htil            = eps_hat;
     Hhtil           = [Htil htil];
     Hhtil_normal    = linalg.mat_normalize(Hhtil,'row');
 
@@ -219,7 +226,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             model.gtil = Ggtil_normal(:,end);
             model.Htil = Hhtil_normal(:,1:end-1);
             model.htil = Hhtil_normal(:,end);
-            model.scl_bnd = prb.scl_bnd;
+            model.uhatmin = uhatmin;
+            model.uhatmax = uhatmax;
             model.i_idx = prb.i_idx;
             model.f_idx = prb.f_idx;
             model.zhat_i = ghat(1:ni);
