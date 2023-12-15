@@ -16,7 +16,10 @@ function [sol_t,sol_x,sol_u] = simulate_dyn(x0,ucell,dyn_func,tspan,N,disc_flg,v
     if disc_flg == "Impulse"
         h = (tvec(2)-tspan(1))/(N-1);        
         Eu2x = varargin{1};
-        K = length(tvec);        
+        K = length(tvec);
+        if K == N % Make integration step finer
+            h = h/10;
+        end
         zeros_nu = zeros(size(uvec,1),1);
         x_init = x0 + Eu2x*uvec(:,1);
         x = x0;
@@ -32,12 +35,21 @@ function [sol_t,sol_x,sol_u] = simulate_dyn(x0,ucell,dyn_func,tspan,N,disc_flg,v
             if k < K-1
                 x_init = sol_x(:,end) + Eu2x*uvec(:,k+1);
             end
-            x = [x sol_x(:,2:end)];
-            t = [t sol_t(2:end)];
+            if K ~= N
+                x = [x sol_x(:,2:end)];
+                t = [t sol_t(2:end)];
+            else % Return open-loop propagated trajectory on the same grid that defines the impulses
+                x = [x sol_x(:,end)];
+                t = [t sol_t(end)];
+            end
         end
-        sol_t = t;        
-        sol_x = x;
-        sol_u = [];
+        sol_t = linspace(tspan(1),tspan(2),N);
+        sol_x = interp1(t',x',sol_t')';
+        sol_u = nan(size(uvec,1),N);
+        for k=1:K
+            [~,idx] = min(abs(tvec(k)-sol_t));
+            sol_u(:,idx) = uvec(:,k);
+        end
     else
         if disc_flg == "FOH"
             u_func = @(t) disc.u_foh(t,uvec,tvec); 
