@@ -29,7 +29,7 @@ function [Ak,Bmk,Bpk,wk,defect_traj,xbarprop] = compute_foh_noparam_v1(tbar,xbar
     Bmk = zeros(nx,nu,N-1);
     Bpk = zeros(nx,nu,N-1);
     wk  = zeros(nx,N-1);
-    vk  = zeros(nx,N-1);
+    % vk  = zeros(nx,N-1);
     defect_traj(N-1) = 0.0; % records the defect between the propagated and reference traj. 
     xbarprop = zeros(nx,N); xbarprop(:,1) = xbar(:,1);
 
@@ -64,7 +64,7 @@ function [Ak,Bmk,Bpk,wk,defect_traj,xbarprop] = compute_foh_noparam_v1(tbar,xbar
         Bmk(:,:,k)  = Akmat*reshape(zkp1(nx+nx2+1:nx+nx2+nxnu),[nx,nu]);
         Bpk(:,:,k)  = Akmat*reshape(zkp1(nx+nx2+nxnu+1:nx+nx2+2*nxnu),[nx,nu]);
         wk(:,k)     = Akmat*zkp1(nx+nx2+2*nxnu+1:2*nx+nx2+2*nxnu,1);
-        vk(:,k)     = zkp1(1:nx) - Akmat*xbar(:,k) - Bmk(:,:,k)*ubar(:,k) - Bpk(:,:,k)*ubar(:,k+1);
+        % vk(:,k)     = zkp1(1:nx) - Akmat*xbar(:,k) - Bmk(:,:,k)*ubar(:,k) - Bpk(:,:,k)*ubar(:,k+1);
         Ak(:,:,k)   = Akmat;
 
         % norm(wk(:,k)-vk(:,k))

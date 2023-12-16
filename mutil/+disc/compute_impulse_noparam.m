@@ -26,7 +26,7 @@ function [Ak,wk,defect_traj,xbarprop] = compute_impulse_noparam(tbar,xbar,ubar,E
     
     Ak  = zeros(nx,nx,N-1);
     wk  = zeros(nx,N-1);
-    vk  = zeros(nx,N-1);
+    % vk  = zeros(nx,N-1);
     defect_traj(N-1) = 0.0; % records the defect between the propagated and reference traj. 
     xbarprop = zeros(nx,N); xbarprop(:,1) = xbar(:,1);
     
@@ -59,7 +59,7 @@ function [Ak,wk,defect_traj,xbarprop] = compute_impulse_noparam(tbar,xbar,ubar,E
         
         Akmat       = reshape(zkp1(nx+1:nx+nx2),[nx,nx]);
         wk(:,k)     = zkp1(nx+nx2+1:2*nx+nx2,1);
-        vk(:,k)     = zkp1(1:nx) - Akmat*(xbar(:,k) + Eu2x*ubar(:,k));
+        % vk(:,k)     = zkp1(1:nx) - Akmat*(xbar(:,k) + Eu2x*ubar(:,k));
         Ak(:,:,k)   = Akmat;
 
         % norm(wk(:,k)-vk(:,k))

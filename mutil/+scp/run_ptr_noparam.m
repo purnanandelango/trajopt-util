@@ -14,6 +14,13 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
         foh_type = "v3"; % Default
     end
 
+    if isfield(prb,'impulse_type')
+        impulse_type = string(prb.impulse_type);
+        assert(ismember(impulse_type,["","_parallel"]),"Incorrect type of impulse discretization.");  
+    else
+        impulse_type = ""; % Default
+    end
+
     % Exact penalty weight
     if isfield(prb,'wvc')
         expnwt =  prb.wvc;
@@ -115,9 +122,9 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,wk] = disc.compute_impulse_noparam(prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,wk] = feval("disc.compute_impulse_noparam"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,wk] = disc.compute_impulse_noparam(prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
+                [Ak,wk] = feval("disc.compute_impulse_noparam"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
             end
             propagate_time = toc*1000;
 
