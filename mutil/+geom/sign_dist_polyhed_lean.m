@@ -10,11 +10,20 @@ function [y,dist_val,dist_jac] = sign_dist_polyhed_lean(x,H,h)
 
         % Use quadprog
         P = 2*eye(n);
-        q = -2*x;
+        q = -2*x;    
         opts = optimoptions('quadprog','Algorithm','active-set',...
-               'ConstraintTolerance',1e-7,'OptimalityTolerance',1e-7,'Display','off');
-        y = quadprog(P,q,H,h,[],[],[],[],ones(n,1),opts);
+               'ConstraintTolerance',1e-6,'OptimalityTolerance',1e-6,'Display','off','MaxIterations',200);
+        y = quadprog(P,q,H,h,[],[],[],[],x,opts);
         dist_val = norm(y-x);
+
+        % Use PIQP
+        % coder.extrinsic('solvers.callpiqp');        
+        % P = 2*eye(n);
+        % c = -2*x;
+        % G = H;
+        % y = zeros(n,1);
+        % y = solvers.callpiqp(P,c,[],[],G,h,[],[]);
+        % dist_val = norm(y-x);
 
     else % x is inside the polyhedron
 
