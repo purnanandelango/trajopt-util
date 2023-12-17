@@ -6,7 +6,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
     converged = false;
     K = prb.K;
 
-    % Check if type of FOH computation is specified
+    % Check if type of discretization computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
         assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
@@ -14,12 +14,19 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
         foh_type = "v3"; % Default
     end
 
+    if isfield(prb,'zoh_type')
+        zoh_type = string(prb.zoh_type);
+        assert(ismember(zoh_type,["","_parallel"]),"Incorrect type of ZOH discretization.");  
+    else
+        zoh_type = ""; % Default
+    end
+
     if isfield(prb,'impulse_type')
         impulse_type = string(prb.impulse_type);
         assert(ismember(impulse_type,["","_parallel"]),"Incorrect type of impulse discretization.");  
     else
         impulse_type = ""; % Default
-    end
+    end    
 
     % Exact penalty weight
     if isfield(prb,'wvc')
@@ -104,9 +111,9 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bk,wk] = feval("disc.compute_zoh_noparam"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                [Ak,Bk,wk] = feval("disc.compute_zoh_noparam"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
             propagate_time = toc*1000;
 
