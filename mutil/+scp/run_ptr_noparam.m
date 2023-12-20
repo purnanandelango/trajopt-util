@@ -111,8 +111,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
                 % Row normalization
                 % scl_mat = eye(prb.nx);
                 scl_mat = diag(vecnorm(...
-                                       [-eye(prb.nx) eye(prb.nx) -eye(prb.nx) prb.invSx*Ak(:,:,k)*prb.Sx prb.invSx*Bmk(:,:,k)*prb.Su prb.invSx*Bpk(:,:,k)*prb.Su], ...
-                                       2,2));
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), prb.invSx*Ak(:,:,k)*prb.Sx, prb.invSx*Bmk(:,:,k)*prb.Su, prb.invSx*Bpk(:,:,k)*prb.Su, prb.invSx*wk(:,k)], ...
+                                       Inf,2));
 
 
                 cnstr = [cnstr;
