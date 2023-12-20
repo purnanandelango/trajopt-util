@@ -1,4 +1,4 @@
-function [Ak,Bk,wk,defect_traj,xbarprop] = compute_zoh_noparam_parallel(tbar,xbar,ubar,h,func,func_linz,varargin)
+function [Ak,Bk,wk,defect_traj,xbarprop] = compute_zoh_noparam_v3_parallel(tbar,xbar,ubar,h,func,func_linz,varargin)
 % Compute ZOH discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
 % Computation across the N-1 intervals is parallelized with parfor
 %   No linearization with respect to system parameters; no system parameters are allowed
@@ -111,7 +111,7 @@ function f = zoh_ode(t,z,u,func,func_linz,nx,nu,nx2,nxnu)
 
     f1 = A*PhiA;
     f2 = A*PhiB + B;
-    f3 = A*Phiw  + w;    
+    f3 = A*Phiw + w;    
     
     f = [func(t,x,u);f1(:);f2(:);f3];    
 

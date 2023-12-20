@@ -1,4 +1,4 @@
-function [Ak,wk,defect_traj,xbarprop] = compute_impulse_noparam(tbar,xbar,ubar,Eu2x,h,func,func_linz,varargin)
+function [Ak,wk,defect_traj,xbarprop] = compute_impulse_noparam_v3(tbar,xbar,ubar,Eu2x,h,func,func_linz,varargin)
 % Compute impulse input discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
 %   No linearization with respect to system parameters
 %
@@ -15,6 +15,8 @@ function [Ak,wk,defect_traj,xbarprop] = compute_impulse_noparam(tbar,xbar,ubar,E
 %
 %   Ak            : nx x nx x N-1 
 %   wk            : nx x N-1
+%   defect_traj   : 1  x N-1
+%   xbarprop      : nx x N
 
 
     [nx,N] = size(xbar);

@@ -1,4 +1,4 @@
-function [Ak,Bk,Sk,wk,defect_traj,xbarprop] = compute_zoh(tbar,xbar,ubar,pbar,h,func,func_linz,varargin)
+function [Ak,Bk,Sk,wk,defect_traj,xbarprop] = compute_zoh_v1(tbar,xbar,ubar,pbar,h,func,func_linz,varargin)
 % Compute ZOH discretization of a nonlinear system for N-1 time intervals with intial conditions xbar(:,1:N-1) and control inputs ubar
 %   Linearization wrt system parameters pbar (including the time dilation factor if applicable) is considered
 %   This function doesn't discriminate between the time dilation factor and other system parameters
@@ -18,6 +18,8 @@ function [Ak,Bk,Sk,wk,defect_traj,xbarprop] = compute_zoh(tbar,xbar,ubar,pbar,h,
 %   Bk            : nx x nu x N-1 
 %   Sk            : nx x np x N-1 
 %   wk            : nx x N-1
+%   defect_traj   : 1  x N-1
+%   xbarprop      : nx x N
 
 
     [nx,N] = size(xbar);

@@ -20,6 +20,8 @@ function [Ak,Bmk,Bpk,Sk,wk,defect_traj,xbarprop] = compute_foh_v3(tbar,xbar,ubar
 %   Bpk           : nx x nu x N-1 
 %   Sk            : nx x np x N-1 
 %   wk            : nx x N-1
+%   defect_traj   : 1  x N-1
+%   xbarprop      : nx x N
 
 
     [nx,N] = size(xbar);

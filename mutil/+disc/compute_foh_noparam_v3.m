@@ -17,6 +17,8 @@ function [Ak,Bmk,Bpk,wk,defect_traj,xbarprop] = compute_foh_noparam_v3(tbar,xbar
 %   Bmk           : nx x nu x N-1 
 %   Bpk           : nx x nu x N-1 
 %   wk            : nx x N-1
+%   defect_traj   : 1  x N-1
+%   xbarprop      : nx x N
 
 
     [nx,N] = size(xbar);
