@@ -16,16 +16,23 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
 
     if isfield(prb,'zoh_type')
         zoh_type = string(prb.zoh_type);
-        assert(ismember(zoh_type,["","_parallel"]),"Incorrect type of ZOH discretization.");  
+        assert(ismember(zoh_type,["v1","v3","v3_parallel"]),"Incorrect type of ZOH discretization.");  
     else
-        zoh_type = ""; % Default
+        zoh_type = "v3"; % Default
     end
 
     if isfield(prb,'impulse_type')
         impulse_type = string(prb.impulse_type);
-        assert(ismember(impulse_type,["","_parallel"]),"Incorrect type of impulse discretization.");  
+        assert(ismember(impulse_type,["v3","v3_parallel"]),"Incorrect type of impulse discretization.");  
     else
-        impulse_type = ""; % Default
+        impulse_type = "v3"; % Default
+    end
+
+    if isfield(prb,'fbp_type')
+        fbp_type = string(prb.fbp_type);
+        assert(ismember(fbp_type,["v3"]),"Incorrect type of finite-burn pulse discretization.");  
+    else
+        fbp_type = "v3"; % Default
     end    
 
     % Exact penalty weight
@@ -100,20 +107,29 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             propagate_time = toc*1000;
 
             for k = 1:K-1
+                
+                % Row normalization
+                % scl_mat = eye(prb.nx);
+                scl_mat = diag(vecnorm(...
+                                       [-eye(prb.nx) eye(prb.nx) -eye(prb.nx) prb.invSx*Ak(:,:,k)*prb.Sx prb.invSx*Bmk(:,:,k)*prb.Su prb.invSx*Bpk(:,:,k)*prb.Su], ...
+                                       2,2));
+
+
                 cnstr = [cnstr;
-                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
-                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                           prb.invSx*Bmk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
-                                                           prb.invSx*Bpk(:,:,k)*(prb.Su*u(:,k+1)+prb.cu) +...
-                                                           prb.invSx*wk(:,k)];
+                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) - prb.invSx*prb.cx +...
+                                                                                      prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
+                                                                                      prb.invSx*Bmk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
+                                                                                      prb.invSx*Bpk(:,:,k)*(prb.Su*u(:,k+1)+prb.cu) +...
+                                                                                      prb.invSx*wk(:,k)...
+                                                                                      )];
             end                        
         elseif prb.disc == "ZOH"
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bk,wk] = feval("disc.compute_zoh_noparam"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bk,wk] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,Bk,wk] = feval("disc.compute_zoh_noparam"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                [Ak,Bk,wk] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
             propagate_time = toc*1000;
 
@@ -129,9 +145,9 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,wk] = feval("disc.compute_impulse_noparam"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,wk] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,wk] = feval("disc.compute_impulse_noparam"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
+                [Ak,wk] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
             end
             propagate_time = toc*1000;
 
@@ -143,6 +159,24 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
                                                            prb.invSx*wk(:,k)];                
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];  
+        elseif prb.disc == "FBP"
+            % Propagation
+            tic
+            if isfield(prb,'ode_solver')
+                [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            else
+                [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            end
+            propagate_time = toc*1000;
+
+            for k = 1:K-1
+                cnstr = [cnstr;
+                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
+                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
+                                                           prb.invSx*Bk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
+                                                           prb.invSx*wk(:,k)];
+            end
+            cnstr = [cnstr; u(:,K) == u(:,K-1)];
         end
         
         % Constraints
