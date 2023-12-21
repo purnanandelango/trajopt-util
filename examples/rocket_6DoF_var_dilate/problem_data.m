@@ -52,7 +52,7 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     
     prb.Vmax_STC    =  1.5;
     prb.cosaoamax   = cosd( 05 ); 
-    prb.STC_flag    = "v1";
+    prb.STC_flag    = "off"; % v1, v2
 
     prb.mdry    = 1;
     prb.mwet    = 2;
@@ -100,8 +100,12 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     % SCP parameters
 
-    prb.disc = "FOH";
-    prb.foh_type = "v3";
+    % prb.disc = "FOH";
+    % prb.foh_type = "v3";
+
+    prb.disc = "ZOH";
+    prb.zoh_type = "v3";
+
     prb.ode_solver = {'ode45',odeset('RelTol',1e-5,'AbsTol',1e-7)};
     prb.scp_iters = scp_iters; % Maximum SCP iterations
     

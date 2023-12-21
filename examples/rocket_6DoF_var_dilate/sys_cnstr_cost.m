@@ -40,25 +40,11 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,prb,...
                  vb_Tmin(k) >= 0];
     
     end  
-    cost_fun = cost_fun + prb.cost_factor*x(1,K)*prb.invSx(1,1);    
+    cost_fun = cost_fun - prb.cost_factor*x(1,K)*prb.invSx(1,1);    
 
-    % Compute time of maneuver and constrain time step
-    ToF = 0;
-    switch prb.disc
-        case "ZOH"
-            for k = 1:prb.K-1
-                ToF = ToF + prb.dtau(k)*s(k);
-                cnstr = [cnstr; prb.dtmin <= prb.dtau(k)*s(k) <= prb.dtmax]; 
-            end
-        case "FOH"
-            for k = 1:prb.K-1
-                ToF = ToF + 0.5*prb.dtau(k)*(s(k+1)+s(k));
-                cnstr = [cnstr; prb.dtmin <= 0.5*prb.dtau(k)*(s(k+1)+s(k)) <= prb.dtmax];
-            end
-    end    
-
-    % Time of maneuver upper bound
-    cnstr = [cnstr;ToF <= prb.ToFmax];
+    % Constrain time of maneuver and time step
+    cnstr = [cnstr;
+             misc.time_cnstr(s,prb.dtau,{prb.dtmin,prb.dtmax,prb.ToFmax},prb.disc)];
 
     vcvb_cnstr = 0;
 
