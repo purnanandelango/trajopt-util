@@ -1,5 +1,5 @@
 function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_constr_cost_fun,varargin)
-% PTR SCP without parameters as decision variables and ZOH/FOH discretization
+% PTR SCP without parameters as decision variables and FOH/ZOH/FBP/Impulse discretization
 % Provision for updating problem parameters after each SCP iteration
 % Exact penalty weight can be matrix-valued
 
@@ -30,7 +30,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
 
     if isfield(prb,'fbp_type')
         fbp_type = string(prb.fbp_type);
-        assert(ismember(fbp_type,["v3"]),"Incorrect type of finite-burn pulse discretization.");  
+        assert(ismember(fbp_type,["v3","v3_parallel"]),"Incorrect type of FBP discretization.");  
     else
         fbp_type = "v3"; % Default
     end    
@@ -106,22 +106,21 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             end
             propagate_time = toc*1000;
 
-            for k = 1:K-1
-                
+            for k = 1:K-1                
+                Ahatk   = prb.invSx*Ak(:,:,k)*prb.Sx;
+                Bmhatk  = prb.invSx*Bmk(:,:,k)*prb.Su;
+                Bphatk  = prb.invSx*Bpk(:,:,k)*prb.Su;
+                whatk   = prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bmk(:,:,k)*prb.cu + Bpk(:,:,k)*prb.cu - prb.cx);
+
                 % Row normalization
-                % scl_mat = eye(prb.nx);
+                % scl_mat = eye(prb.nx);                
                 scl_mat = diag(vecnorm(...
-                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), prb.invSx*Ak(:,:,k)*prb.Sx, prb.invSx*Bmk(:,:,k)*prb.Su, prb.invSx*Bpk(:,:,k)*prb.Su, prb.invSx*wk(:,k)], ...
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), Ahatk, Bmhatk, Bphatk, whatk], ...
                                        Inf,2));
 
 
                 cnstr = [cnstr;
-                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) - prb.invSx*prb.cx +...
-                                                                                      prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                                                      prb.invSx*Bmk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
-                                                                                      prb.invSx*Bpk(:,:,k)*(prb.Su*u(:,k+1)+prb.cu) +...
-                                                                                      prb.invSx*wk(:,k)...
-                                                                                      )];
+                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bmhatk*u(:,k) + Bphatk*u(:,k+1) + whatk)];
             end                        
         elseif prb.disc == "ZOH"
             % Propagation
@@ -134,13 +133,44 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             propagate_time = toc*1000;
 
             for k = 1:K-1
+                Ahatk   = prb.invSx*Ak(:,:,k)*prb.Sx;
+                Bhatk   = prb.invSx*Bk(:,:,k)*prb.Su;
+                whatk   = prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bk(:,:,k)*prb.cu - prb.cx);
+
+                % Row normalization
+                % scl_mat = eye(prb.nx);                
+                scl_mat = diag(vecnorm(...
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), Ahatk, Bhatk, whatk], ...
+                                       Inf,2));
+
+
                 cnstr = [cnstr;
-                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
-                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                           prb.invSx*Bk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
-                                                           prb.invSx*wk(:,k)];
+                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
             end
-            cnstr = [cnstr; u(:,K) == u(:,K-1)];             
+            cnstr = [cnstr; u(:,K) == u(:,K-1)];  
+        elseif prb.disc == "FBP"
+            % Propagation
+            tic
+            % In-build ODE solver is required
+            [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+            propagate_time = toc*1000;
+
+            for k = 1:K-1
+                Ahatk   = prb.invSx*Ak(:,:,k)*prb.Sx;
+                Bhatk   = prb.invSx*Bk(:,:,k)*prb.Su;
+                whatk   = prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bk(:,:,k)*prb.cu - prb.cx);
+
+                % Row normalization
+                % scl_mat = eye(prb.nx);                
+                scl_mat = diag(vecnorm(...
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), Ahatk, Bhatk, whatk], ...
+                                       Inf,2));
+
+
+                cnstr = [cnstr;
+                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
+            end
+            cnstr = [cnstr; u(:,K) == u(:,K-1)];            
         elseif prb.disc == "Impulse"
             % Propagation
             tic
@@ -152,31 +182,21 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
             propagate_time = toc*1000;
 
             for k = 1:K-1
+                Ahatk   = prb.invSx*Ak(:,:,k)*prb.Sx;
+                Bhatk   = prb.invSx*Ak(:,:,k)*prb.Eu2x*prb.Su;
+                whatk   = prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Ak(:,:,k)*prb.Eu2x*prb.cu - prb.cx);
+
+                % Row normalization
+                % scl_mat = eye(prb.nx);                
+                scl_mat = diag(vecnorm(...
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), Ahatk, Bhatk, whatk], ...
+                                       Inf,2));
+
+
                 cnstr = [cnstr;
-                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
-                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                           prb.invSx*Ak(:,:,k)*prb.Eu2x*(prb.Su*u(:,k)+prb.cu) +...
-                                                           prb.invSx*wk(:,k)];                
+                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];  
-        elseif prb.disc == "FBP"
-            % Propagation
-            tic
-            if isfield(prb,'ode_solver')
-                [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
-            else
-                [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.h,prb.dyn_func,prb.dyn_func_linearize);
-            end
-            propagate_time = toc*1000;
-
-            for k = 1:K-1
-                cnstr = [cnstr;
-                         vc_plus(:,k) - vc_minus(:,k) == - x(:,k+1) - prb.invSx*prb.cx +...
-                                                           prb.invSx*Ak(:,:,k)*(prb.Sx*x(:,k)+prb.cx) +...
-                                                           prb.invSx*Bk(:,:,k)*(prb.Su*u(:,k)+prb.cu) +...
-                                                           prb.invSx*wk(:,k)];
-            end
-            cnstr = [cnstr; u(:,K) == u(:,K-1)];
         end
         
         % Constraints

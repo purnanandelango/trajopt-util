@@ -1,5 +1,5 @@
 function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,prb)
-% PTR SCP without parameters as decision variables and ZOH/FOH discretization
+% PTR SCP without parameters as decision variables and FOH/ZOH/FBP/Impulse discretization
 % Subproblem solver input is hand-parsed
 % No provision for updating the problem parameters after each SCP iteration
 % Exact penalty weight cannot be matrix-valued; only scalar wvc is allowed
@@ -9,13 +9,34 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     nx = prb.nx;
     nu = prb.nu;
 
-    % Check if type of FOH computation is specified
+    % Check if type of discretization computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
         assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
     else
         foh_type = "v3"; % Default
     end
+
+    if isfield(prb,'zoh_type')
+        zoh_type = string(prb.zoh_type);
+        assert(ismember(zoh_type,["v1","v3","v3_parallel"]),"Incorrect type of ZOH discretization.");  
+    else
+        zoh_type = "v3"; % Default
+    end
+
+    if isfield(prb,'impulse_type')
+        impulse_type = string(prb.impulse_type);
+        assert(ismember(impulse_type,["v3","v3_parallel"]),"Incorrect type of impulse discretization.");  
+    else
+        impulse_type = "v3"; % Default
+    end
+
+    if isfield(prb,'fbp_type')
+        fbp_type = string(prb.fbp_type);
+        assert(ismember(fbp_type,["v3","v3_parallel"]),"Incorrect type of FBP discretization.");  
+    else
+        fbp_type = "v3"; % Default
+    end    
 
     ni = size(prb.Ei,1);
     nf = size(prb.Ef,1);
@@ -40,7 +61,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
                        sparse(nf,nx*(K-1)) prb.Ef];
     Ghat_if         = [Ghat_if sparse((ni+nf),nu*K+2*nx*(K-1))];
     Ghat_mu         = [speye(nx*(K-1)) -speye(nx*(K-1))];
-    if prb.disc == "ZOH"
+    if prb.disc == "ZOH" || prb.disc == "FBP" || prb.disc == "Impulse"
         ghat            = [zhat_i;
                            zhat_f;
                            zeros(nx*(K-1)+nu,1)];
@@ -115,13 +136,24 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
                                            zeros(2*nx*(K-1),1)];
             parse_time = toc*1000;
 
-        elseif prb.disc == "ZOH"
+        elseif prb.disc == "ZOH" || prb.disc == "FBP" || prb.disc == "Impulse"
             % Propagation
             tic
-            if isfield(prb,'ode_solver')
-                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
-            else
-                [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if prb.disc == "ZOH"
+                if isfield(prb,'ode_solver')
+                    [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                else
+                    [Ak,Bk,wk] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                end
+            elseif prb.disc == "FBP"
+                % In-build ODE solver is required
+                [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);                            
+            elseif prb.disc == "Impulse"
+                if isfield(prb,'ode_solver')
+                    [Ak,wk] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                else
+                    [Ak,wk] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
+                end                
             end
             propagate_time = toc*1000;
             
@@ -130,10 +162,16 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             Bhat = [];
             what = [];            
             for k = 1:prb.K-1
-                Ahat = blkdiag(Ahat,prb.invSx*Ak(:,:,k)*prb.Sx);                
-                Bhat = blkdiag(Bhat,prb.invSx*Bk(:,:,k)*prb.Su);
-                what = [what;
-                        prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bk(:,:,k)*prb.cu - prb.cx)];                
+                Ahat = blkdiag(Ahat,prb.invSx*Ak(:,:,k)*prb.Sx); 
+                if prb.disc == "Impulse"
+                    Bhat = blkdiag(Bhat,prb.invSx*Ak(:,:,k)*prb.Eu2x*prb.Su);
+                    what = [what;
+                            prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Ak(:,:,k)*prb.Eu2x*prb.cu - prb.cx)];                    
+                else
+                    Bhat = blkdiag(Bhat,prb.invSx*Bk(:,:,k)*prb.Su);
+                    what = [what;
+                            prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bk(:,:,k)*prb.cu - prb.cx)];
+                end
             end
 
             Ghat_x = [Ahat sparse(nx*(K-1),nx)] - [sparse(nx*(K-1),nx) speye(nx*(K-1))];
