@@ -5,8 +5,7 @@ function u = u_zoh(tt,uvec,tvec)
 
     N = length(tvec);
     M = length(tt);
-    nu = size(uvec,1);
-    u = zeros(nu,M);
+    u = zeros(size(uvec,1),M);
 
     for k = 1:M 
         t = tt(k);
