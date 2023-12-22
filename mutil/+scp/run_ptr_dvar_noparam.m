@@ -7,12 +7,35 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys
     converged = false;
     K = prb.K;
 
-    % Check if type of FOH computation is specified
+    assert(prb.cx == zeros(prb.nx,1) && prb.cu == zeros(prb.nu,1),"Scaling parameters cx and cu should be 0 for deviation variables.");
+
+    % Check if type of discretization computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
-        assert(ismember(foh_type,["v1","v2","v3"]),"Incorrect type of FOH discretization.");        
+        assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
     else
         foh_type = "v3"; % Default
+    end
+
+    if isfield(prb,'zoh_type')
+        zoh_type = string(prb.zoh_type);
+        assert(ismember(zoh_type,["v1","v3","v3_parallel"]),"Incorrect type of ZOH discretization.");  
+    else
+        zoh_type = "v3"; % Default
+    end
+
+    if isfield(prb,'impulse_type')
+        impulse_type = string(prb.impulse_type);
+        assert(ismember(impulse_type,["v3","v3_parallel"]),"Incorrect type of impulse discretization.");  
+    else
+        impulse_type = "v3"; % Default
+    end
+
+    if isfield(prb,'fbp_type')
+        fbp_type = string(prb.fbp_type);
+        assert(ismember(fbp_type,["v3","v3_parallel"]),"Incorrect type of FBP discretization.");  
+    else
+        fbp_type = "v3"; % Default
     end
 
     % Exact penalty weight
