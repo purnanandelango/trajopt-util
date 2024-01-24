@@ -47,7 +47,7 @@ function [Ak,Bk,wk,defect_traj,xbarprop] = compute_fbp_noparam_v3_parallel(tbar,
 
         zk = [xbar(:,k);ABw_init];
         
-        [~,z_] = ode45(@(t,z) fbp_ode(t,z,ubar(:,k),1,func,func_linz,nx,nu,nx2,nxnu),tspan_burn{k},zk,odeset('AbsTol',1e-10,'RelTol',1e-10));
+        [~,z_] = ode45(@(t,z) fbp_ode(t,z,ubar(:,k),1,func,func_linz,nx,nu,nx2,nxnu),tspan_burn{k},zk,odeset('AbsTol',1e-5,'RelTol',1e-4));
         
         [~,z_] = feval(ode_solver{1},@(t,z) fbp_ode(t,z,zeros(nu,1),0,func,func_linz,nx,nu,nx2,nxnu),tspan_drift{k},z_(end,:)',ode_solver{2});
 

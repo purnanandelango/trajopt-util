@@ -9,7 +9,7 @@ clc
 % Suppress quaternion normalization in sysdyn_func and sysdyn_func_naive before testing
 
 q_ = randn(4,1); q_ = q_/norm(q_);
-z_mean = [1.5;4*rand(3,1);2*rand(3,1);q_;0.2*rand(3,1)];
+z_mean = [1.5;4*rand(3,1);9*rand(3,1);q_;0.2*rand(3,1)];
 % z_ = mvnrnd(z_mean,eye(14))';
 z_ = z_mean;
 TB = [1;2;3];

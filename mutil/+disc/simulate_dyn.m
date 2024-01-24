@@ -86,7 +86,7 @@ function [sol_t,sol_x,sol_u] = simulate_dyn(x0,ucell,dyn_func,tspan,N,disc_flg,v
             % High-precision integration during the burn
             tspan_burn = tvec(k) + [0, t_burn];
             [sol_t,sol_x] = ode45(@(t,x) dyn_func(t,x,uvec(:,k)),tspan_burn,x_init,...
-                                  odeset('AbsTol',1e-10,'RelTol',1e-10));
+                                  odeset('AbsTol',1e-5,'RelTol',1e-4));
             M = length(sol_t);
             t = [t; sol_t(1:M-1)];
             u = [u; repmat(uvec(:,k)',[M-1,1])];

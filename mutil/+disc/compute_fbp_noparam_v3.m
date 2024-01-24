@@ -39,7 +39,7 @@ function [Ak,Bk,wk,defect_traj,xbarprop] = compute_fbp_noparam_v3(tbar,xbar,ubar
         zk = [xbar(:,k);ABw_init];
         tspan = tbar(k) + [0, t_burn];
         
-        [~,z_] = ode45(@(t,z) fbp_ode(t,z,ubar(:,k),1,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,odeset('AbsTol',1e-10,'RelTol',1e-10));
+        [~,z_] = ode45(@(t,z) fbp_ode(t,z,ubar(:,k),1,func,func_linz,nx,nu,nx2,nxnu),tspan,zk,odeset('AbsTol',1e-5,'RelTol',1e-4));
 
         tspan = [tbar(k) + t_burn, tbar(k+1)]; 
         
