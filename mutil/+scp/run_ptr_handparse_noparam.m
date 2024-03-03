@@ -95,7 +95,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
     zbar = [xbar_scl(:);ubar_scl(:);zeros(2*nx*(K-1),1)];
     
     fprintf("+---------------------------------------------------------------------------------------+\n");
-    fprintf("|                            ..:: Penalized Trust Region ::..                           |\n");
+    fprintf("|                         ..:: Successive Convexification ::..                          |\n");
+    fprintf("|                               (Penalized Trust Region)                                |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");

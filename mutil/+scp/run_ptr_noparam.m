@@ -43,7 +43,8 @@ function [xbar,ubar,cost_val,converged] = run_ptr_noparam(xbar,ubar,prb,sys_cons
     end
     
     fprintf("+--------------------------------------------------------------------------------------------------------+\n");
-    fprintf("|                                    ..:: Penalized Trust Region ::..                                    |\n");
+    fprintf("|                                  ..:: Successive Convexification ::..                                  |\n");
+    fprintf("|                                        (Penalized Trust Region)                                        |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   | log(VC cnstr.) |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
