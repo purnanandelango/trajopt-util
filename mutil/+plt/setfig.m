@@ -2,7 +2,7 @@ function [] = setfig()
 % 02/11/20
 % Inspired from: https://www.mathworks.com/matlabcentral/answers/183311-setting-default-interpreter-to-latex
 
-fnm = 'lmodern';
+fnm = 'Latin Modern Roman';
 set(groot,'defaultAxesFontName',fnm,'defaultColorbarFontName',fnm,...
     'defaultGeoaxesFontName',fnm,'defaultGraphplotEdgeFontName',fnm,...
     'defaultGraphplotNodeFontName',fnm,'defaultLegendFontName',fnm,...
@@ -36,7 +36,7 @@ set(groot,'defaultAxesXGrid','off','defaultAxesXMinorGrid','off',...
     'defaultAxesXMinorGridMode','manual','defaultAxesMinorGridAlpha',0.,...
     'defaultAxesYMinorGridMode','manual');
 
-mrksz = 15;
+mrksz = 18;
 pos = [100,100,1000,600]; % [left bottom width height]
 set(groot,'defaultFigurePosition',pos);
 set(groot,'defaultLineMarkerSize',mrksz);

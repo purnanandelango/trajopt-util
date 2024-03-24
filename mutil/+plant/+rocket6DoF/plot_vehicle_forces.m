@@ -11,7 +11,7 @@ function plot_vehicle_forces(u,rI,vI,qBI,bdscl,thrust,drag,idx)
     j2 = idx{1}(2);
     j3 = idx{1}(3);
     
-    plot3(rI(j1,:),rI(j2,:),rI(j3,:),'.b')
+    % plot3(rI(j1,:),rI(j2,:),rI(j3,:),'.b')
 
     xlabel(horzcat('$',idx{2}{1},'$'))
     ylabel(horzcat('$',idx{2}{2},'$'))
@@ -31,27 +31,27 @@ function plot_vehicle_forces(u,rI,vI,qBI,bdscl,thrust,drag,idx)
         if k<K
         quiver3(rI(j1,k),rI(j2,k),rI(j3,k),...
             bdscl*xBI(j1,k),bdscl*xBI(j2,k),bdscl*xBI(j3,k),...
-            'Color','red','LineWidth',1.5);
+            'Color','red','LineWidth',4);
         quiver3(rI(j1,k),rI(j2,k),rI(j3,k),...
             -thrust*uBI(j1,k),-thrust*uBI(j2,k),-thrust*uBI(j3,k),...
-            'Color',[0,0.7,0.3],'LineWidth',1.5);
+            'Color',[0,0.7,0.3],'LineWidth',4);
         if ~isnan(drag.scl)
             quiver3(rI(j1,k),rI(j2,k),rI(j3,k),...
                 drag.scl*AI(j1,k),drag.scl*AI(j2,k),drag.scl*AI(j3,k),...
-                'Color',[0.9,0.7,0],'LineWidth',1.5);
+                'Color',[0.9,0.7,0],'LineWidth',4);
         end 
         end
         if k==K
         qplot_body = quiver3(rI(j1,k),rI(j2,k),rI(j3,k),...
             bdscl*xBI(j1,k),bdscl*xBI(j2,k),bdscl*xBI(j3,k),...
-            'Color','red','LineWidth',1.5);
+            'Color','red','LineWidth',4);
         qplot_thrust = quiver3(rI(j1,k),rI(j2,k),rI(j3,k),...
             -thrust*uBI(j1,k),-thrust*uBI(j2,k),-thrust*uBI(j3,k),...
-            'Color',[0,0.7,0.3],'LineWidth',1.5);
+            'Color',[0,0.7,0.3],'LineWidth',4);
         if ~isnan(drag.scl)
             qplot_drag = quiver3(rI(j1,k),rI(j2,k),rI(j3,k),...
                 drag.scl*AI(j1,k),drag.scl*AI(j2,k),drag.scl*AI(j3,k),...
-                'Color',[0.9,0.7,0],'LineWidth',1.5);
+                'Color',[0.9,0.7,0],'LineWidth',4);
         end
         end
     end
