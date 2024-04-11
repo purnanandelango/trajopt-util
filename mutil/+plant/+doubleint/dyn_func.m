@@ -6,7 +6,7 @@ function dx = dyn_func(x,u,s,n,c_d,accl)
     assert(length(x) == 2*n,"State dimension does not match n");
     assert(ismember(n,[2,3]));    
     assert(s > 0,"Dilation factor should be positive.");
-    assert(c_d >= 0,"Drag coefficient should be positive.");
+    % assert(c_d >= 0,"Drag coefficient should be positive.");
 
 
     % r = x(1:n);       % Position
