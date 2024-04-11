@@ -7,7 +7,10 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys
     converged = false;
     K = prb.K;
 
-    assert(max(prb.cx == zeros(prb.nx,1)) && max(prb.cu == zeros(prb.nu,1)),"Scaling parameters cx and cu should be 0 for deviation variables.");
+    % assert(max(prb.cx == zeros(prb.nx,1)) && max(prb.cu == zeros(prb.nu,1)),"Scaling parameters cx and cu should be 0 for deviation variables.");
+    if ~(max(prb.cx == zeros(prb.nx,1)) && max(prb.cu == zeros(prb.nu,1)))
+        warning("Affine scaling offset terms cx and cu are nonzero.")
+    end
 
     % Check if type of discretization computation is specified
     if isfield(prb,'foh_type')
