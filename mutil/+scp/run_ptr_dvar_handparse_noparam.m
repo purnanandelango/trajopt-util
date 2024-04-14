@@ -9,13 +9,34 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
     nx = prb.nx;
     nu = prb.nu;
 
-    % Check if type of FOH computation is specified
+    % Check if type of discretization computation is specified
     if isfield(prb,'foh_type')
         foh_type = string(prb.foh_type);
         assert(ismember(foh_type,["v1","v2","v3","v3_parallel"]),"Incorrect type of FOH discretization.");        
     else
         foh_type = "v3"; % Default
     end
+
+    if isfield(prb,'zoh_type')
+        zoh_type = string(prb.zoh_type);
+        assert(ismember(zoh_type,["v1","v3","v3_parallel"]),"Incorrect type of ZOH discretization.");  
+    else
+        zoh_type = "v3"; % Default
+    end
+
+    if isfield(prb,'impulse_type')
+        impulse_type = string(prb.impulse_type);
+        assert(ismember(impulse_type,["v3","v3_parallel"]),"Incorrect type of impulse discretization.");  
+    else
+        impulse_type = "v3"; % Default
+    end
+
+    if isfield(prb,'fbp_type')
+        fbp_type = string(prb.fbp_type);
+        assert(ismember(fbp_type,["v3","v3_parallel"]),"Incorrect type of FBP discretization.");  
+    else
+        fbp_type = "v3"; % Default
+    end    
 
     ni = size(prb.Ei,1);
     nf = size(prb.Ef,1);
@@ -46,7 +67,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
                        sparse(nf,nx*(K-1)) prb.Ef];
     Ghat_if         = [Ghat_if sparse((ni+nf),nu*K+2*nx*(K-1))];
     Ghat_mu         = [speye(nx*(K-1)) -speye(nx*(K-1))];
-    if prb.disc == "ZOH"
+    if prb.disc == "ZOH" || prb.disc == "FBP" || prb.disc == "Impulse"
         ghat            = [zhat_i;
                            zhat_f;
                            zeros(nx*(K-1)+nu,1)];
@@ -118,13 +139,24 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             % phat = phat_cost_vc;
             parse_time = toc*1000;
 
-        elseif prb.disc == "ZOH"
+        elseif prb.disc == "ZOH" || prb.disc == "FBP" || prb.disc == "Impulse"
             % Propagation
             tic
-            if isfield(prb,'ode_solver')
-                [Ak,Bk,~,~,xbarprop] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
-            else
-                [Ak,Bk,~,~,xbarprop] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+            if prb.disc == "ZOH"
+                if isfield(prb,'ode_solver')
+                    [Ak,Bk,~,~,xbarprop] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                else
+                    [Ak,Bk,~,~,xbarprop] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                end
+            elseif prb.disc == "FBP"
+                % In-build ODE solver is required
+                [Ak,Bk,~,~,xbarprop] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);                            
+            elseif prb.disc == "Impulse"
+                if isfield(prb,'ode_solver')
+                    [Ak,~,~,xbarprop] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                else
+                    [Ak,~,~,xbarprop] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
+                end                
             end
             propagate_time = toc*1000;
             
@@ -133,10 +165,14 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             Bhat = [];
             what = [];            
             for k = 1:prb.K-1
-                Ahat = blkdiag(Ahat,prb.invSx*Ak(:,:,k)*prb.Sx);                
-                Bhat = blkdiag(Bhat,prb.invSx*Bk(:,:,k)*prb.Su);
+                Ahat = blkdiag(Ahat,prb.invSx*Ak(:,:,k)*prb.Sx);
+                if prb.disc == "Impulse"
+                    Bhat = blkdiag(Bhat,prb.invSx*Ak(:,:,k)*prb.Eu2x*prb.Su);
+                else
+                    Bhat = blkdiag(Bhat,prb.invSx*Bk(:,:,k)*prb.Su);
+                end
                 what = [what;
-                        prb.invSx*(xbarprop(:,k+1)-xbar(:,k+1))];                
+                        prb.invSx*(xbarprop(:,k+1)-xbar(:,k+1))];                                
             end
 
             Ghat_x = [Ahat sparse(nx*(K-1),nx)] - [sparse(nx*(K-1),nx) speye(nx*(K-1))];
@@ -165,6 +201,11 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
                            -uhatmin; 
                             sparse(2*nx*(K-1),1);
                             eps_hat]; 
+
+        % Gghat        = [Ghat ghat];
+        % Gghat_normal = linalg.mat_normalize(full(Gghat),'row');  
+        % Ghat         = sparse(Gghat_normal(:,1:end-1));
+        % ghat         = Gghat_normal(:,end); 
 
         tic
         if prb.solver.name == "quadprog"
