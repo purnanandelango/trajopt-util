@@ -27,20 +27,6 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys
         zoh_type = "v3"; % Default
     end
 
-    if isfield(prb,'impulse_type')
-        impulse_type = string(prb.impulse_type);
-        assert(ismember(impulse_type,["v3","v3_parallel"]),"Incorrect type of impulse discretization.");  
-    else
-        impulse_type = "v3"; % Default
-    end
-
-    if isfield(prb,'fbp_type')
-        fbp_type = string(prb.fbp_type);
-        assert(ismember(fbp_type,["v3","v3_parallel"]),"Incorrect type of FBP discretization.");  
-    else
-        fbp_type = "v3"; % Default
-    end
-
     % Exact penalty weight
     if isfield(prb,'wvc')
         expnwt =  prb.wvc;
@@ -109,29 +95,50 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_noparam(xbar,ubar,prb,sys
             propagate_time = toc*1000;
 
             for k = 1:K-1
+                Ahatk   = prb.invSx*Ak(:,:,k)*prb.Sx;
+                Bmhatk  = prb.invSx*Bmk(:,:,k)*prb.Su;
+                Bphatk  = prb.invSx*Bpk(:,:,k)*prb.Su;
+                whatk   = prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1)); 
+
+                % Row normalization
+                % scl_mat = eye(prb.nx);                
+                scl_mat = diag(vecnorm(...
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), Ahatk, Bmhatk, Bphatk, whatk], ...
+                                       Inf,2));                
+
                 cnstr = [cnstr;
-                         vc_minus(:,k) - vc_plus(:,k) == - dx(:,k+1) +...
-                                                           prb.invSx*Ak(:,:,k)*prb.Sx*dx(:,k) +...
-                                                           prb.invSx*Bmk(:,:,k)*prb.Su*du(:,k) +...
-                                                           prb.invSx*Bpk(:,:,k)*prb.Su*du(:,k+1) +...
-                                                           prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1))];
+                         zeros(prb.nx,1) == scl_mat\(vc_minus(:,k) - vc_plus(:,k) - dx(:,k+1) +...
+                                                     Ahatk*dx(:,k) +...
+                                                     Bmhatk*du(:,k) +...
+                                                     Bphatk*du(:,k+1) +...
+                                                     whatk)];
             end                        
         elseif prb.disc == "ZOH"
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bk,~,~,xbarprop] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bk,~,~,xbarprop] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,Bk,~,~,xbarprop] = disc.compute_zoh_noparam(prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                [Ak,Bk,~,~,xbarprop] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
             propagate_time = toc*1000;
 
             for k = 1:K-1
+                Ahatk   = prb.invSx*Ak(:,:,k)*prb.Sx;
+                Bhatk  = prb.invSx*Bk(:,:,k)*prb.Su;
+                whatk   = prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1)); 
+
+                % Row normalization
+                % scl_mat = eye(prb.nx);                
+                scl_mat = diag(vecnorm(...
+                                       [-eye(prb.nx), eye(prb.nx), -eye(prb.nx), Ahatk, Bhatk, whatk], ...
+                                       Inf,2));                
+
                 cnstr = [cnstr;
-                         vc_minus(:,k) - vc_plus(:,k) == - dx(:,k+1) +...
-                                                           prb.invSx*Ak(:,:,k)*prb.Sx*dx(:,k) +...
-                                                           prb.invSx*Bk(:,:,k)*prb.Su*du(:,k) +...
-                                                           prb.invSx*(xbarprop(:,k+1) - xbar(:,k+1))];
+                         zeros(prb.nx,1) == scl_mat\(vc_minus(:,k) - vc_plus(:,k) - dx(:,k+1) +...
+                                                     Ahatk*dx(:,k) +...
+                                                     Bhatk*du(:,k) +...
+                                                     whatk)];
             end
             cnstr = [cnstr; du(:,K) == du(:,K-1)];             
         end
