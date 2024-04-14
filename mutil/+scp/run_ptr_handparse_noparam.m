@@ -188,6 +188,11 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
 
         end
 
+        % Gghat        = [Ghat ghat];
+        % Gghat_normal = linalg.mat_normalize(full(Gghat),'row');  
+        % Ghat         = sparse(Gghat_normal(:,1:end-1));
+        % ghat         = Gghat_normal(:,end); 
+
         tic
         if prb.solver.name == "quadprog"
             z = quadprog(Phat,phat,Hhat,hhat,Ghat,ghat,[],[],[],optimoptions('quadprog','Algorithm','interior-point-convex',... 'active-set',...
@@ -254,6 +259,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_handparse_noparam(xbar,ubar,pr
             
             Ggtil        = [Ghat(ni+nf+1:end,:) ghat(ni+nf+1:end)];
             Ggtil_normal = linalg.mat_normalize(Ggtil,'row');
+            % Ggtil_normal = Ggtil;
 
             model = struct;
             model.nx = nx;
