@@ -22,7 +22,7 @@ function [xbar,ubar,pbar,cost_val,converged] = ctscvx(xbar,ubar,pbar,prb,sys_con
     
     fprintf("+--------------------------------------------------------------------------------------------------------+\n");
     fprintf("|                                          ..::   ct-SCvx   ::..                                         |\n");
-    fprintf("|                 Successive Convexification with Continuous-Time Constraint Satisfaction                |");
+    fprintf("|                 Successive Convexification with Continuous-Time Constraint Satisfaction                |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   | log(VC cnstr.) |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");

@@ -96,7 +96,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_handparse_noparam(xbar,ubar,prb
     
     fprintf("+---------------------------------------------------------------------------------------+\n");
     fprintf("|                                 ..::   ct-SCvx   ::..                                 |\n");
-    fprintf("|        Successive Convexification with Continuous-Time Constraint Satisfaction        |");
+    fprintf("|        Successive Convexification with Continuous-Time Constraint Satisfaction        |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
