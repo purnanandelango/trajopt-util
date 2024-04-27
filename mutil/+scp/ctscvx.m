@@ -1,5 +1,5 @@
-function [xbar,ubar,pbar,cost_val,converged] = run_ptr(xbar,ubar,pbar,prb,sys_constr_cost_fun)
-% PTR SCP with parameters as decision variables (including time dilation) and ZOH/FOH discretization
+function [xbar,ubar,pbar,cost_val,converged] = ctscvx(xbar,ubar,pbar,prb,sys_constr_cost_fun)
+% ct-SCvx with parameters as decision variables (including time dilation) and ZOH/FOH discretization
 % Exact penalty weight can be matrix-valued
 
     converged = false;
@@ -21,7 +21,8 @@ function [xbar,ubar,pbar,cost_val,converged] = run_ptr(xbar,ubar,pbar,prb,sys_co
     end    
     
     fprintf("+--------------------------------------------------------------------------------------------------------+\n");
-    fprintf("|                                    ..:: Penalized Trust Region ::..                                    |\n");
+    fprintf("|                                          ..::   ct-SCvx   ::..                                         |\n");
+    fprintf("|                 Successive Convexification with Continuous-Time Constraint Satisfaction                |");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   | log(VC cnstr.) |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");

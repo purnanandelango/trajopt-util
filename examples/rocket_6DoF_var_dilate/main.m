@@ -11,8 +11,8 @@ load('recent_solution','xbar','ubar','taubar');
 [xbar,ubar] = misc.create_initialization(prb,1, ...
                                          xbar,ubar,taubar);
 
-[xbar,ubar] = scp.run_ptr_noparam(xbar,ubar,prb,@sys_cnstr_cost);
-% [xbar,ubar] = scp.run_ptr_dvar_noparam(xbar,ubar,prb,@sys_cnstr_cost);
+[xbar,ubar] = scp.ctscvx_noparam(xbar,ubar,prb,@sys_cnstr_cost);
+% [xbar,ubar] = scp.ctscvx_dvar_noparam(xbar,ubar,prb,@sys_cnstr_cost);
 
 taubar = prb.tau;
 tvecbar = prb.time_grid(prb.tau,xbar,ubar);

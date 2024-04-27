@@ -1,5 +1,5 @@
-function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ubar,prb)
-% PTR SCP without parameters as decision variables and ZOH/FOH discretization
+function [xbar,ubar,cost_val,converged] = ctscvx_handparse_noparam(xbar,ubar,prb)
+% ct-SCvx without parameters as decision variables and FOH/ZOH/FBP/Impulse discretization
 % Subproblem solver input is hand-parsed
 % No provision for updating the problem parameters after each SCP iteration
 % Exact penalty weight cannot be matrix-valued; only scalar wvc is allowed
@@ -41,24 +41,18 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
     ni = size(prb.Ei,1);
     nf = size(prb.Ef,1);
     ny = size(prb.Ey,1);
-    nz = (nx+nu)*K+2*nx*(K-1);    
+    % nz = (nx+nu)*K+2*nx*(K-1);    
 
-    zhat_i          = (prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*xbar(:,1));
-    zhat_f          = (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*xbar(:,K)); 
-    uhatmax         = zeros(nu*K,1);
-    uhatmin         = zeros(nu*K,1);
-    eps_hat         = zeros(ny*(K-1),1);
-    for k = 1:K
-        uhatmin((k-1)*nu+1:k*nu) = prb.invSu*(prb.umin-ubar(:,k));
-        uhatmax((k-1)*nu+1:k*nu) = prb.invSu*(prb.umax-ubar(:,k));
-        if k < K
-            eps_hat((k-1)*ny+1:k*ny) = prb.eps_cnstr*prb.Ey*prb.invSx*prb.Ey'*ones(ny,1) - prb.Ey*prb.invSx*(xbar(:,k+1)-xbar(:,k));
-        end
-    end
+    zhat_i          = (prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*prb.cx);
+    zhat_f          = (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*prb.cx); 
+    uhatmax         = kron(ones(K,1),prb.invSu*(prb.umax-prb.cu));
+    uhatmin         = kron(ones(K,1),prb.invSu*(prb.umin-prb.cu));
+    eps_hat         = prb.eps_cnstr*kron(ones(K-1,1),...
+                                         prb.Ey*prb.invSx*prb.Ey'*ones(ny,1));
 
     % Parse to QP canonical form
     Phat            = blkdiag(prb.wtr*speye((nx+nu)*K),sparse(2*nx*(K-1),2*nx*(K-1)));
-    phat            = prb.cost_factor*[sparse(nx*(K-1),1); 
+    phat_cost_vc    = prb.cost_factor*[sparse(nx*(K-1),1); 
                                        prb.term_cost_vec;
                                        sparse(nu*K+2*nx*(K-1),1)] ...
                       + prb.wvc*[sparse((nx+nu)*K,1);
@@ -83,24 +77,26 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
     Hhat_y          = - [kron(speye(K-1),prb.Ey) sparse(ny*(K-1),nx)] + [sparse(ny*(K-1),nx) kron(speye(K-1),prb.Ey)]; 
     Hhat            = [Hhat_u_mu;
                        Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1))];
-    % hhat            = [ uhatmax;
-    %                    -uhatmin;
-    %                     sparse(2*nx*(K-1),1);
-    %                     eps_hat];
+    hhat            = [ uhatmax;
+                       -uhatmin;
+                        sparse(2*nx*(K-1),1);
+                        eps_hat];
     n_ineq_cnstr    = 2*nu*K + 2*nx*(K-1) + ny*(K-1);
 
     % PIPG
     Htil            = [Hhat_y sparse(ny*(K-1),nu*K+2*nx*(K-1))];  
-    % htil            = eps_hat;
-    % Hhtil           = [Htil htil];
-    % Hhtil_normal    = linalg.mat_normalize(Hhtil,'row');
+    htil            = eps_hat;
+    Hhtil           = [Htil htil];
+    Hhtil_normal    = linalg.mat_normalize(Hhtil,'row');
 
     % Scale reference state and control
-    zbar = zeros(nz,1);
+    xbar_scl = prb.invSx*(xbar - repmat(prb.cx,[1,K]));
+    ubar_scl = prb.invSu*(ubar - repmat(prb.cu,[1,K]));  
+    zbar = [xbar_scl(:);ubar_scl(:);zeros(2*nx*(K-1),1)];
     
     fprintf("+---------------------------------------------------------------------------------------+\n");
-    fprintf("|                         ..:: Successive Convexification ::..                          |\n");
-    fprintf("|                               (Penalized Trust Region)                                |\n");
+    fprintf("|                                 ..::   ct-SCvx   ::..                                 |\n");
+    fprintf("|        Successive Convexification with Continuous-Time Constraint Satisfaction        |");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
     fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
@@ -112,9 +108,9 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             % Propagation
             tic
             if isfield(prb,'ode_solver')
-                [Ak,Bmk,Bpk,~,~,xbarprop] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
             else
-                [Ak,Bmk,Bpk,~,~,xbarprop] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                [Ak,Bmk,Bpk,wk] = feval("disc.compute_foh_noparam_"+foh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
             end
             propagate_time = toc*1000;
             
@@ -128,7 +124,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
                 Bmhat = blkdiag(Bmhat,prb.invSx*Bmk(:,:,k)*prb.Su);                
                 Bphat = blkdiag(Bphat,prb.invSx*Bpk(:,:,k)*prb.Su);
                 what = [what;
-                        prb.invSx*(xbarprop(:,k+1)-xbar(:,k+1))];
+                        prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bmk(:,:,k)*prb.cu + Bpk(:,:,k)*prb.cu - prb.cx)];
             end        
             
             Ghat_x = [Ahat  sparse(nx*(K-1),nx)] - [sparse(nx*(K-1),nx) speye(nx*(K-1))];
@@ -136,7 +132,9 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             Ghat = [Ghat_if;
                     Ghat_x Ghat_u Ghat_mu];
             ghat((ni+nf)+1:end) = -what;  
-            % phat = phat_cost_vc;
+            phat = phat_cost_vc - prb.wtr*[xbar_scl(:);
+                                           ubar_scl(:);
+                                           zeros(2*nx*(K-1),1)];
             parse_time = toc*1000;
 
         elseif prb.disc == "ZOH" || prb.disc == "FBP" || prb.disc == "Impulse"
@@ -144,18 +142,18 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             tic
             if prb.disc == "ZOH"
                 if isfield(prb,'ode_solver')
-                    [Ak,Bk,~,~,xbarprop] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                    [Ak,Bk,wk] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
                 else
-                    [Ak,Bk,~,~,xbarprop] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
+                    [Ak,Bk,wk] = feval("disc.compute_zoh_noparam_"+zoh_type,prb.tau,xbar,ubar,prb.h,prb.dyn_func,prb.dyn_func_linearize);
                 end
             elseif prb.disc == "FBP"
                 % In-build ODE solver is required
-                [Ak,Bk,~,~,xbarprop] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);                            
+                [Ak,Bk,wk] = feval("disc.compute_fbp_noparam_"+fbp_type,prb.tau,xbar,ubar,prb.t_burn,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);                            
             elseif prb.disc == "Impulse"
                 if isfield(prb,'ode_solver')
-                    [Ak,~,~,xbarprop] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
+                    [Ak,wk] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize,prb.ode_solver);
                 else
-                    [Ak,~,~,xbarprop] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
+                    [Ak,wk] = feval("disc.compute_impulse_noparam_"+impulse_type,prb.tau,xbar,ubar,prb.Eu2x,prb.h,prb.dyn_func,prb.dyn_func_linearize);            
                 end                
             end
             propagate_time = toc*1000;
@@ -165,14 +163,16 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             Bhat = [];
             what = [];            
             for k = 1:prb.K-1
-                Ahat = blkdiag(Ahat,prb.invSx*Ak(:,:,k)*prb.Sx);
+                Ahat = blkdiag(Ahat,prb.invSx*Ak(:,:,k)*prb.Sx); 
                 if prb.disc == "Impulse"
                     Bhat = blkdiag(Bhat,prb.invSx*Ak(:,:,k)*prb.Eu2x*prb.Su);
+                    what = [what;
+                            prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Ak(:,:,k)*prb.Eu2x*prb.cu - prb.cx)];                    
                 else
                     Bhat = blkdiag(Bhat,prb.invSx*Bk(:,:,k)*prb.Su);
+                    what = [what;
+                            prb.invSx*(wk(:,k) + Ak(:,:,k)*prb.cx + Bk(:,:,k)*prb.cu - prb.cx)];
                 end
-                what = [what;
-                        prb.invSx*(xbarprop(:,k+1)-xbar(:,k+1))];                                
             end
 
             Ghat_x = [Ahat sparse(nx*(K-1),nx)] - [sparse(nx*(K-1),nx) speye(nx*(K-1))];
@@ -181,26 +181,12 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
                     Ghat_x Ghat_u Ghat_mu;
                     sparse(nu,nx*K+nu*(K-2)) speye(nu) -speye(nu) sparse(nu,2*nx*(K-1))];
             ghat((ni+nf)+1:end) = [-what;sparse(nu,1)];  
-            % phat = phat_cost_vc;
+            phat = phat_cost_vc - prb.wtr*[xbar_scl(:);
+                                           ubar_scl(:);
+                                           zeros(2*nx*(K-1),1)];
             parse_time = toc*1000;
 
         end
-
-        zhat_i          = (prb.Ei*prb.invSx*prb.Ei')*(prb.zi-prb.Ei*xbar(:,1));
-        zhat_f          = (prb.Ef*prb.invSx*prb.Ef')*(prb.zf-prb.Ef*xbar(:,K)); 
-        for k = 1:K
-            uhatmin((k-1)*nu+1:k*nu) = prb.invSu*(prb.umin-ubar(:,k));
-            uhatmax((k-1)*nu+1:k*nu) = prb.invSu*(prb.umax-ubar(:,k));
-            if k < K
-                eps_hat((k-1)*ny+1:k*ny) = prb.eps_cnstr*prb.Ey*prb.invSx*prb.Ey'*ones(ny,1) - prb.Ey*prb.invSx*(xbar(:,k+1)-xbar(:,k));
-            end
-        end   
-
-        ghat(1:ni+nf)   = [zhat_i;zhat_f];
-        hhat            = [ uhatmax;
-                           -uhatmin; 
-                            sparse(2*nx*(K-1),1);
-                            eps_hat]; 
 
         % Gghat        = [Ghat ghat];
         % Gghat_normal = linalg.mat_normalize(full(Gghat),'row');  
@@ -227,7 +213,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             cones.l = n_ineq_cnstr;
             data = struct;
             data.P = Phat;
-            data.c = full(phat);
+            data.c = phat;
             data.A = [Ghat;Hhat];
             data.b = full([ghat;hhat]);
             if j > 1
@@ -256,7 +242,7 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
         elseif prb.solver.name == "gurobi"
             model = struct;
             model.Q = Phat/2;
-            model.obj = full(phat);
+            model.obj = phat;
             model.A = [Ghat;Hhat];
             model.rhs = full([ghat;hhat]);
             model.lb = -Inf((nx+nu)*K+2*nx*(K-1),1);
@@ -270,11 +256,6 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
             result = gurobi(model,params);
             z = result.x;
         elseif prb.solver.name == "pipg"
-
-            htil         = eps_hat;
-            Hhtil        = [Htil htil];
-            Hhtil_normal = linalg.mat_normalize(Hhtil,'row');  
-            % Hhtil_normal = Hhtil;
             
             Ggtil        = [Ghat(ni+nf+1:end,:) ghat(ni+nf+1:end)];
             Ggtil_normal = linalg.mat_normalize(Ggtil,'row');
@@ -318,22 +299,24 @@ function [xbar,ubar,cost_val,converged] = run_ptr_dvar_handparse_noparam(xbar,ub
 
         x_scl    = reshape(z(1:nx*K),[nx,K]);
         u_scl    = reshape(z(nx*K+1:(nx+nu)*K),[nu,K]);
-        x        = prb.Sx*x_scl + xbar;
-        u        = prb.Su*u_scl + ubar;
-        cost_val = prb.term_cost_vec'*prb.invSx*x(:,K);
+        x        = prb.Sx*x_scl + repmat(prb.cx,[1,K]);
+        u        = prb.Su*u_scl + repmat(prb.cu,[1,K]);
+        cost_val = prb.term_cost_vec'*x_scl(:,K);
         vc_term  = [sparse(1,(nx+nu)*K), ones(1,2*nx*(K-1))]*z;
 
         % Ensure that the TR value is always displayed consistently with infinity norm
         % Note that this is for display and for evaluation of termination criteria 
         Jtr_post_solve = zeros(1,K);        
         for k = 1:K
-            Jtr_post_solve(k) = norm([x_scl(:,k);u_scl(:,k)],'inf');
+            Jtr_post_solve(k) = norm([x_scl(:,k);u_scl(:,k)]-[xbar_scl(:,k);ubar_scl(:,k)],'inf');
         end
         tr_term = max(Jtr_post_solve);
 
         % Update reference trajectory
         xbar     = x;
         ubar     = u;
+        xbar_scl = x_scl;
+        ubar_scl = u_scl;
         zbar     = z;
 
         ToF = prb.time_of_maneuver(xbar,ubar);        

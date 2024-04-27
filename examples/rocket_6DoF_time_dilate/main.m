@@ -12,7 +12,7 @@ load('recent_solution','xbar','ubar','taubar','tvecbar');
 [xbar,ubar,sbar] = misc.create_initialization(prb,1, ...
                                               xbar,ubar,taubar,tvecbar(end));
 
-[xbar,ubar,pbar] = scp.run_ptr(xbar,ubar,sbar,prb,@sys_cnstr_cost);
+[xbar,ubar,pbar] = scp.ctscvx(xbar,ubar,sbar,prb,@sys_cnstr_cost);
 taubar = prb.tau;
 tvecbar = taubar*pbar;
 
