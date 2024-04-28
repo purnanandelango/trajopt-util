@@ -22,8 +22,9 @@ See example implementations provided at [`https://github.com/purnanandelango/ct-
 
  - `pipg` Extrapolated Proportional Integral Projected Gradient Method
 
-### Requirements for *node-only* constrained trajectory optimization
+### Requirements for *node-only*-constrained trajectory optimization
 
  - [YALMIP](https://yalmip.github.io/)
- - [OSQP](https://osqp.org/) &ndash; for solving quadratic programs
- - [ECOS](https://github.com/embotech/ecos) &ndash; for solving second-order cone programs
+ - Conic optimization solvers
+   - QP: [OSQP](https://osqp.org/), [PIQP](https://github.com/PREDICT-EPFL/piqp)
+   - SOCP: [ECOS](https://github.com/embotech/ecos), Gurobi, MOSEK
