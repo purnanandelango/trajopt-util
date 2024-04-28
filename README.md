@@ -1,11 +1,29 @@
-# Utilities for Numerical Trajectory Optimization
+# `mutil` MATLAB Utilities for Trajectory Optimization
 
-This repository is intended to be used as a submodule.
+See example implementations provided at [`https://github.com/purnanandelango/ct-scvx`](https://github.com/purnanandelango/ct-scvx)
 
-## Requirements
+## `scp` Successive Convexification with Continuous-Time Constraint Satisfaction
 
- - [YALMIP](https://yalmip.github.io/) &ndash; for formulating and solving trajectory optimization problems.
- - [OSQP](https://osqp.org/) &ndash; for solving quadratic programs.
- - [ECOS](https://github.com/embotech/ecos) &ndash; for solving second-order cone programs.
- - [MATLAB Optimization Toolbox](https://www.mathworks.com/products/optimization.html) &ndash; for elliposoid signed-distance computations.
- - [MPT3](https://www.mpt3.org/) &ndash; for operations involving polyhedra.
+ - `scp.ctscvx_[...]_handparse_noparam`  
+
+## `disc` Discretization and Parameterization
+
+ - First-order hold (FOH)
+ - Zero-order hold (ZOH)
+ - Finite-burn pulse (FBP)
+ - Impulse
+
+## `plant` System Model
+
+- Double integrator with drag
+- 6-DoF rocket with drag
+
+## `solvers` Conic Optimization Solver
+
+ - `pipg` Extrapolated Proportional Integral Projected Gradient Method
+
+### Requirements for *node-only* constrained trajectory optimization
+
+ - [YALMIP](https://yalmip.github.io/)
+ - [OSQP](https://osqp.org/) &ndash; for solving quadratic programs
+ - [ECOS](https://github.com/embotech/ecos) &ndash; for solving second-order cone programs
