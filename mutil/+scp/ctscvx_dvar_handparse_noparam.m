@@ -2,7 +2,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
 % ct-SCvx without parameters as decision variables and ZOH/FOH discretization
 % Subproblem solver input is hand-parsed
 % No provision for updating the problem parameters after each SCP iteration
-% Exact penalty weight cannot be matrix-valued; only scalar wvc is allowed
+% Exact penalty weight cannot be matrix-valued; only scalar w_ep is allowed
 
     converged = false;
     K = prb.K;
@@ -57,11 +57,11 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
     end
 
     % Parse to QP canonical form
-    Phat            = blkdiag(prb.wtr*speye((nx+nu)*K),sparse(2*nx*(K-1),2*nx*(K-1)));
+    Phat            = blkdiag(prb.w_px*speye((nx+nu)*K),sparse(2*nx*(K-1),2*nx*(K-1)));
     phat            = prb.cost_factor*[sparse(nx*(K-1),1); 
                                        prb.term_cost_vec;
                                        sparse(nu*K+2*nx*(K-1),1)] ...
-                      + prb.wvc*[sparse((nx+nu)*K,1);
+                      + prb.w_ep*[sparse((nx+nu)*K,1);
                                  ones(2*nx*(K-1),1)];
     Ghat_if         = [prb.Ei              sparse(ni,nx*(K-1));
                        sparse(nf,nx*(K-1)) prb.Ef];
@@ -102,7 +102,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
     fprintf("|                                 ..::   ct-SCvx   ::..                                 |\n");
     fprintf("|        Successive Convexification with Continuous-Time Constraint Satisfaction        |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
-    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   |\n");
+    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(px) | log(ep) |    Cost    |   ToF   |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+\n");
     
     for j = 1:prb.scp_iters
@@ -136,7 +136,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
             Ghat = [Ghat_if;
                     Ghat_x Ghat_u Ghat_mu];
             ghat((ni+nf)+1:end) = -what;  
-            % phat = phat_cost_vc;
+            % phat = phat_cost_ep;
             parse_time = toc*1000;
 
         elseif prb.disc == "ZOH" || prb.disc == "FBP" || prb.disc == "Impulse"
@@ -181,7 +181,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
                     Ghat_x Ghat_u Ghat_mu;
                     sparse(nu,nx*K+nu*(K-2)) speye(nu) -speye(nu) sparse(nu,2*nx*(K-1))];
             ghat((ni+nf)+1:end) = [-what;sparse(nu,1)];  
-            % phat = phat_cost_vc;
+            % phat = phat_cost_ep;
             parse_time = toc*1000;
 
         end
@@ -300,7 +300,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
             sGtilHtil = svd(full([model.Gtil;model.Htil]));
 
             options = struct;
-            options.alpha = 2/(sqrt(prb.wtr^2 + 4*prb.solver.omega*(sGtilHtil(1)^2))+prb.wtr);
+            options.alpha = 2/(sqrt(prb.w_px^2 + 4*prb.solver.omega*(sGtilHtil(1)^2))+prb.w_px);
             options.beta = prb.solver.omega*options.alpha;
             options.rho = prb.solver.rho;
             options.eps_abs = prb.solver.eps_abs;
@@ -321,15 +321,15 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
         x        = prb.Sx*x_scl + xbar;
         u        = prb.Su*u_scl + ubar;
         cost_val = prb.term_cost_vec'*prb.invSx*x(:,K);
-        vc_term  = [sparse(1,(nx+nu)*K), ones(1,2*nx*(K-1))]*z;
+        ep_term  = [sparse(1,(nx+nu)*K), ones(1,2*nx*(K-1))]*z;
 
-        % Ensure that the TR value is always displayed consistently with infinity norm
+        % Ensure that the px value is always displayed consistently with infinity norm
         % Note that this is for display and for evaluation of termination criteria 
-        Jtr_post_solve = zeros(1,K);        
+        Jpx_post_solve = zeros(1,K);        
         for k = 1:K
-            Jtr_post_solve(k) = norm([x_scl(:,k);u_scl(:,k)],'inf');
+            Jpx_post_solve(k) = norm([x_scl(:,k);u_scl(:,k)],'inf');
         end
-        tr_term = max(Jtr_post_solve);
+        px_term = max(Jpx_post_solve);
 
         % Update reference trajectory
         xbar     = x;
@@ -339,9 +339,9 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_handparse_noparam(xbar,uba
         ToF = prb.time_of_maneuver(xbar,ubar);        
         
         % Console output
-        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %10.3e | %7.1e |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF);
+        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %10.3e | %7.1e |\n',j,propagate_time,parse_time,solve_time,log10(px_term),log10(ep_term),cost_val,ToF);
         
-        if vc_term < prb.epsvc && tr_term < prb.epstr
+        if ep_term < prb.eps_ep && px_term < prb.eps_px
             converged = true;
             fprintf("+---------------------------------------------------------------------------------------+\n");
             fprintf('Converged!\n')

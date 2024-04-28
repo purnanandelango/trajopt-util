@@ -3,8 +3,8 @@ clearvars
 
 prb = problem_data(10, ...      % K
                    10, ...     % scp_iters
-                   5e1, ...     % wvc
-                   2.00, ...    % wtr
+                   5e1, ...     % w_ep
+                   2.00, ...    % w_px
                    0.01 ...     % cost_factor
                    );        
 

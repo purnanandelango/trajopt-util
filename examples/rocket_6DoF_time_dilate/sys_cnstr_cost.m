@@ -1,4 +1,4 @@
-function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,~,prb,...
+function [cnstr,cost_fun,ep_cnstr] = sys_cnstr_cost(x,u,~,prb,...
                                                       ~,ubar,~)
 
     K = prb.K;
@@ -23,7 +23,7 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,~,prb,...
 
     cost_fun = 0;
 
-    vb_Tmin = sdpvar(1,K);
+    ep_Tmin = sdpvar(1,K);
 
     for k = 1:K 
         cnstr = [cnstr;
@@ -34,15 +34,15 @@ function [cnstr,cost_fun,vcvb_cnstr] = sys_cnstr_cost(x,u,~,prb,...
                  norm(TB(:,k)) <= prb.Tmax;                                             % Thrust magnitude upper bound      
                  prb.cosdelmax*norm(TB(:,k)) <= TB(1,k);                                % Thrust pointing constraint 
                  norm(vI(:,k)) <= prb.Vmax;                                             % Speed upper bound
-                 TB(:,k)'*(-ubar(:,k)/norm(ubar(:,k))) + prb.Tmin <= vb_Tmin(k);        % Linearized thrust magnitude lower bound
-                 vb_Tmin(k) >= 0];
+                 TB(:,k)'*(-ubar(:,k)/norm(ubar(:,k))) + prb.Tmin <= ep_Tmin(k);        % Linearized thrust magnitude lower bound
+                 ep_Tmin(k) >= 0];
     
     end  
 
     cost_fun = cost_fun + prb.cost_factor*x(1,K)*prb.invSx(1,1);
 
-    vcvb_cnstr = prb.wvc*sum(vb_Tmin(:)); % Slack for exactly penalized constraint
+    ep_cnstr = prb.w_ep*sum(ep_Tmin(:)); % Slack for exactly penalized constraint
 
-    cost_fun = cost_fun + vcvb_cnstr;
+    cost_fun = cost_fun + ep_cnstr;
 
 end

@@ -36,17 +36,17 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
     end    
 
     % Exact penalty weight
-    if isfield(prb,'wvc')
-        expnwt =  prb.wvc;
-    elseif isfield(prb,'Wvc')
-        expnwt = prb.Wvc;
+    if isfield(prb,'w_ep')
+        expnwt =  prb.w_ep;
+    elseif isfield(prb,'W_ep')
+        expnwt = prb.W_ep;
     end
     
     fprintf("+--------------------------------------------------------------------------------------------------------+\n");
     fprintf("|                                          ..::   ct-SCvx   ::..                                         |\n");
     fprintf("|                 Successive Convexification with Continuous-Time Constraint Satisfaction                |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
-    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(TR) | log(VC) |    Cost    |   ToF   | log(VC cnstr.) |\n");
+    fprintf("| Iter. | Prop. [ms] | Prs. [ms] | Slv. [ms] | log(px) | log(ep) |    Cost    |   ToF   | log(ep cnstr.) |\n");
     fprintf("+-------+------------+-----------+-----------+---------+---------+------------+---------+----------------+\n");
     
     for j = 1:prb.scp_iters
@@ -56,8 +56,8 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
         % Variables
         x = sdpvar(prb.nx,K);
         u = sdpvar(prb.nu,K);
-        vc_minus = sdpvar(prb.nx,K-1);
-        vc_plus = sdpvar(prb.nx,K-1);
+        ep_minus = sdpvar(prb.nx,K-1);
+        ep_plus = sdpvar(prb.nx,K-1);
     
         % Unscaled state and control input
         x_unscl = sdpvar(prb.nx,K);
@@ -67,32 +67,32 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
             u_unscl(:,k) = prb.Su*u(:,k) + prb.cu;
         end
         
-        Jvc = 0;
+        Jep = 0;
         cnstr = [];
         for k = 1:K-1
             % Virtual control penalty 
-            Jvc = Jvc + sum(expnwt*(vc_plus(:,k) + vc_minus(:,k)));
+            Jep = Jep + sum(expnwt*(ep_plus(:,k) + ep_minus(:,k)));
             cnstr = [cnstr;
-                     vc_plus(:,k) >= 0;
-                     vc_minus(:,k) >= 0];
+                     ep_plus(:,k) >= 0;
+                     ep_minus(:,k) >= 0];
         end
 
         % Trust region penalty
         xubar_scl = sdpvar(prb.nx+prb.nu,K);
         switch prb.tr_norm
             case {2,inf}
-                Jtr = sdpvar(1,K);        
+                Jpx = sdpvar(1,K);        
                 for k = 1:K
                     xubar_scl(:,k) = [prb.invSx*(xbar(:,k)-prb.cx);
                                       prb.invSu*(ubar(:,k)-prb.cu)];                    
-                    cnstr = [cnstr; norm([x(:,k);u(:,k)]-xubar_scl(:,k),prb.tr_norm) <= Jtr(k)]; 
+                    cnstr = [cnstr; norm([x(:,k);u(:,k)]-xubar_scl(:,k),prb.tr_norm) <= Jpx(k)]; 
                 end                
             case 'quad'
-                Jtr = 0;        
+                Jpx = 0;        
                 for k = 1:K
                     xubar_scl(:,k) = [prb.invSx*(xbar(:,k)-prb.cx);
                                       prb.invSu*(ubar(:,k)-prb.cu)];
-                    Jtr = Jtr + 0.5*([x(:,k);u(:,k)]-xubar_scl(:,k))'*([x(:,k);u(:,k)]-xubar_scl(:,k));
+                    Jpx = Jpx + 0.5*([x(:,k);u(:,k)]-xubar_scl(:,k))'*([x(:,k);u(:,k)]-xubar_scl(:,k));
                 end                
         end
 
@@ -121,7 +121,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
 
 
                 cnstr = [cnstr;
-                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bmhatk*u(:,k) + Bphatk*u(:,k+1) + whatk)];
+                         zeros(prb.nx,1) == scl_mat\(- ep_plus(:,k) + ep_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bmhatk*u(:,k) + Bphatk*u(:,k+1) + whatk)];
             end                        
         elseif prb.disc == "ZOH"
             % Propagation
@@ -146,7 +146,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
 
 
                 cnstr = [cnstr;
-                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
+                         zeros(prb.nx,1) == scl_mat\(- ep_plus(:,k) + ep_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];  
         elseif prb.disc == "FBP"
@@ -169,7 +169,7 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
 
 
                 cnstr = [cnstr;
-                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
+                         zeros(prb.nx,1) == scl_mat\(- ep_plus(:,k) + ep_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];            
         elseif prb.disc == "Impulse"
@@ -195,20 +195,20 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
 
 
                 cnstr = [cnstr;
-                         zeros(prb.nx,1) == scl_mat\(- vc_plus(:,k) + vc_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
+                         zeros(prb.nx,1) == scl_mat\(- ep_plus(:,k) + ep_minus(:,k) - x(:,k+1) + Ahatk*x(:,k) + Bhatk*u(:,k) + whatk)];
             end
             cnstr = [cnstr; u(:,K) == u(:,K-1)];  
         end
         
         % Constraints
-        [cnstr_sys,cost_fun,vc_constr_term] = sys_constr_cost_fun(x_unscl,u_unscl,prb,...
+        [cnstr_sys,cost_fun,ep_constr_term] = sys_constr_cost_fun(x_unscl,u_unscl,prb,...
                                                                   xbar,ubar);
 
 
         cnstr = [cnstr;cnstr_sys];
         
         % Objective
-        obj_fun = Jvc + prb.wtr*sum(Jtr) + cost_fun;            
+        obj_fun = Jep + prb.w_px*sum(Jpx) + cost_fun;            
         
         % Solve
         % Model = export(cnstr,obj_fun,prb.solver_settings); % Export input to solver from YALMIP
@@ -231,18 +231,18 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
         x_unscl = value(x_unscl);
         u_unscl = value(u_unscl);
         cost_val = value(cost_fun)/prb.cost_factor;
-        vc_term = value(Jvc);
-        vc_constr_term = value(vc_constr_term)/max(expnwt(:));
+        ep_term = value(Jep);
+        ep_constr_term = value(ep_constr_term)/max(expnwt(:));
 
-        % Ensure that the TR value is always displayed consistently with infinity norm
+        % Ensure that the px value is always displayed consistently with infinity norm
         % Note that this is for display and for evaluation of termination criteria 
-        Jtr_post_solve = zeros(1,K);        
+        Jpx_post_solve = zeros(1,K);        
         for k = 1:K
             xubar_scl = [prb.invSx*(xbar(:,k)-prb.cx);
                         prb.invSu*(ubar(:,k)-prb.cu)];                    
-            Jtr_post_solve(k) = norm([x(:,k);u(:,k)]-xubar_scl,'inf');
+            Jpx_post_solve(k) = norm([x(:,k);u(:,k)]-xubar_scl,'inf');
         end
-        tr_term = max(Jtr_post_solve);
+        px_term = max(Jpx_post_solve);
 
         % Update reference trajectory
         xbar = x_unscl;
@@ -251,9 +251,9 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
         ToF = prb.time_of_maneuver(xbar,ubar);        
         
         % Console output
-        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %10.3e | %7.1e |    %5.1f       |\n',j,propagate_time,parse_time,solve_time,log10(tr_term),log10(vc_term),cost_val,ToF,log10(vc_constr_term));
+        fprintf('|  %02d   |   %7.1e  |  %7.1e  |  %7.1e  | %5.1f   | %5.1f   | %10.3e | %7.1e |    %5.1f       |\n',j,propagate_time,parse_time,solve_time,log10(px_term),log10(ep_term),cost_val,ToF,log10(ep_constr_term));
         
-        if vc_term < prb.epsvc && tr_term < prb.epstr
+        if ep_term < prb.eps_ep && px_term < prb.eps_px
             converged = true;
             fprintf("+--------------------------------------------------------------------------------------------------------+\n")
             fprintf('Converged!\n')

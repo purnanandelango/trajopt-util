@@ -3,8 +3,8 @@ clearvars
 
 prb = problem_data(08,  ...        % K
                    010,  ...       % scp_iters
-                   3e1, ...        % wvc
-                   1.00, ...       % wtr
+                   3e1, ...        % w_ep
+                   1.00, ...       % w_px
                    1.00);          % cost_factor
 
 load('recent_solution','xbar','ubar','taubar');

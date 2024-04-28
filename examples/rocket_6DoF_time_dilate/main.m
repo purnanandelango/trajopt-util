@@ -3,8 +3,8 @@ clc
 
 prb = problem_data(08, ...              % K
                    150, ...              % scp_iters
-                   3e1, ...             % wvc
-                   1e+0, ...            % wtr
+                   3e1, ...             % w_ep
+                   1e+0, ...            % w_px
                    5e+0 ...             % cost_factor
                    );
 

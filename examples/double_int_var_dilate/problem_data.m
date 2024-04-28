@@ -1,4 +1,4 @@
-function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
+function prb = problem_data(K,scp_iters,w_ep,w_px,cost_factor)
     
     prb.K = K;
 
@@ -81,16 +81,16 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
 
     prb.solver_settings = sdpsettings('solver','ecos','verbose',false);
     
-    % prb.tr_norm = 2;
-    % prb.tr_norm = inf;
-    prb.tr_norm = 'quad';
+    % prb.px_norm = 2;
+    % prb.px_norm = inf;
+    prb.px_norm = 'quad';
     
-    prb.wvc = wvc;
-    prb.wtr = wtr;
+    prb.w_ep = w_ep;
+    prb.w_px = w_px;
     prb.cost_factor = cost_factor;
     
-    prb.epsvc = 1e-7;
-    prb.epstr = 1e-3;
+    prb.eps_ep = 1e-7;
+    prb.eps_px = 1e-3;
 
     % Takes in unscaled data
     prb.time_of_maneuver = @(x,u) disc.time_of_maneuver(prb.disc,prb.tau,u(prb.n+1,:));    

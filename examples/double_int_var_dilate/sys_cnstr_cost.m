@@ -1,4 +1,4 @@
-function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
+function [cnstr,cost_fun,ep_cnstr] = sys_cnstr_cost(x,u,prb,...
                                                     xbar,ubar)
 
     K = prb.K;
@@ -40,9 +40,9 @@ function [cnstr,cost_fun,vc_cnstr] = sys_cnstr_cost(x,u,prb,...
 
     end  
 
-    vc_cnstr = sum(nu_ncvx(:));    
+    ep_cnstr = sum(nu_ncvx(:));    
 
-    cost_fun = cost_fun + prb.cost_factor*norm(u(:)) + prb.wvc*vc_cnstr;
+    cost_fun = cost_fun + prb.cost_factor*norm(u(:)) + prb.w_ep*ep_cnstr;
 
     % Compute time of maneuver and constrain time step
     ToF = 0;

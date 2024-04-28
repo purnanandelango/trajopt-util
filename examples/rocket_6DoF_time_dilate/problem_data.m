@@ -1,4 +1,4 @@
-function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
+function prb = problem_data(K,scp_iters,w_ep,w_px,cost_factor)
     
     prb.K = K;
     prb.Kfine = prb.K*100; 
@@ -97,16 +97,16 @@ function prb = problem_data(K,scp_iters,wvc,wtr,cost_factor)
     prb.solver_settings = sdpsettings('solver','ecos','verbose',false);
     % prb.solver_settings = sdpsettings('solver','ipopt','verbose',false);
     
-    % prb.tr_norm = 2;
-    % prb.tr_norm = inf;
-    prb.tr_norm = 'quad';
+    % prb.px_norm = 2;
+    % prb.px_norm = inf;
+    prb.px_norm = 'quad';
     
-    prb.wvc = wvc;
-    prb.wtr = wtr;
+    prb.w_ep = w_ep;
+    prb.w_px = w_px;
     prb.cost_factor = cost_factor;
     
-    prb.epsvc = 1e-7;
-    prb.epstr = 5e-4;
+    prb.eps_ep = 1e-7;
+    prb.eps_px = 5e-4;
     
     % convenient functions for accessing RHS of nonlinear and linearized ODE
     prb.dyn_func = @(t,x,u,s) plant.rocket6DoF.dyn_func(x,u,s,prb.c_ax,prb.c_ayz,diag(prb.JB),prb.gI,prb.rho,prb.SA,prb.rTB,prb.rcpB,prb.alphmdt,prb.betmdt);
