@@ -79,13 +79,13 @@ function [xbar,ubar,cost_val,converged] = ctscvx_noparam(xbar,ubar,prb,sys_const
 
         % Trust region penalty
         xubar_scl = sdpvar(prb.nx+prb.nu,K);
-        switch prb.tr_norm
+        switch prb.px_norm
             case {2,inf}
                 Jpx = sdpvar(1,K);        
                 for k = 1:K
                     xubar_scl(:,k) = [prb.invSx*(xbar(:,k)-prb.cx);
                                       prb.invSu*(ubar(:,k)-prb.cu)];                    
-                    cnstr = [cnstr; norm([x(:,k);u(:,k)]-xubar_scl(:,k),prb.tr_norm) <= Jpx(k)]; 
+                    cnstr = [cnstr; norm([x(:,k);u(:,k)]-xubar_scl(:,k),prb.px_norm) <= Jpx(k)]; 
                 end                
             case 'quad'
                 Jpx = 0;        

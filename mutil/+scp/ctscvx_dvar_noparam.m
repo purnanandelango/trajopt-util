@@ -70,11 +70,11 @@ function [xbar,ubar,cost_val,converged] = ctscvx_dvar_noparam(xbar,ubar,prb,sys_
         end
 
         % Trust region penalty
-        switch prb.tr_norm
+        switch prb.px_norm
             case {2,inf}
                 Jpx = sdpvar(1,K);        
                 for k = 1:K
-                    cnstr = [cnstr; norm([dx(:,k);du(:,k)],prb.tr_norm) <= Jpx(k)]; 
+                    cnstr = [cnstr; norm([dx(:,k);du(:,k)],prb.px_norm) <= Jpx(k)]; 
                 end                
             case 'quad'
                 Jpx = 0;        
